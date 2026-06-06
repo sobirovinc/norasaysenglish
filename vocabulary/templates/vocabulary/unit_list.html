@@ -1,0 +1,38 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}{{ level.name }} Units | Nora says English{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'vocabulary:home' %}">Home</a>
+    <span aria-hidden="true">›</span>
+    <span>{{ level.name }}</span>
+</nav>
+
+<section class="page-section">
+    <div class="section-heading">
+        <p class="eyebrow">{{ level.name }}</p>
+        <h1>Choose a unit</h1>
+        <p class="section-sub">Darsni tanlang — match words and earn stars</p>
+    </div>
+
+    <div class="unit-path">
+        {% for unit in level.units.all %}
+            <a class="unit-card" href="{% url 'vocabulary:unit_intro' unit.id %}" data-unit-id="{{ unit.id }}">
+                <div class="unit-card-top">
+                    <span class="unit-number">Unit {{ unit.order }}</span>
+                    <span class="unit-stars" data-unit-stars aria-label="Stars"></span>
+                </div>
+                <strong class="unit-title">{{ unit.title }}</strong>
+                <span class="unit-best" data-unit-best hidden></span>
+            </a>
+        {% empty %}
+            <div class="empty-state">
+                <p>No units in this level yet.</p>
+                <p class="empty-state-uz">Bu bosqichda hali darslar yoʻq.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}{{ unit.title }} | Nora says English{% endblock %}
+{% block body_class %}game-page{% endblock %}
+{% block site_header %}{% endblock %}
+{% block site_footer %}{% endblock %}
+
+{% block content %}
+<section
+    class="game"
+    data-unit-id="{{ unit.id }}"
+    data-unit-title="{{ unit.title }}"
+    data-intro-url="{% url 'vocabulary:unit_intro' unit.id %}"
+    data-home-url="{% url 'vocabulary:home' %}"
+    {% if next_unit %}data-next-unit-url="{% url 'vocabulary:unit_intro' next_unit.id %}"{% endif %}
+    data-round-size="7"
+    data-round-seconds="60"
+    data-round-bonus="25"
+>
+    <header class="game-topbar">
+        <a class="topbar-button icon-button back-link" href="{% url 'vocabulary:unit_list' unit.level.id %}" aria-label="Back to units">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+        <a class="topbar-button icon-button" href="{% url 'vocabulary:home' %}" aria-label="Home">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="currentColor"/>
+            </svg>
+        </a>
+        <button id="muteButton" class="topbar-button icon-button" type="button" aria-pressed="false" aria-label="Mute sound">
+            <svg class="topbar-icon icon-sound-on" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor"/>
+                <path d="M15.5 8.5a4.5 4.5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <svg class="topbar-icon icon-sound-off" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor"/>
+                <path d="m16 9 5 5M21 9l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <div class="game-hud-stats">
+            <div class="stat stat-lives" aria-label="Lives">
+                <span id="lives" class="lives-display"></span>
+            </div>
+            <div class="stat stat-score"><span class="stat-label">Score</span> <span id="score">0</span></div>
+            <div class="stat stat-time"><span class="stat-label">Vaqt</span> <span id="time">60</span></div>
+        </div>
+    </header>
+
+    <div class="game-status">
+        <div class="game-title">
+            <p class="eyebrow">{{ unit.level.name }}</p>
+            <h1>{{ unit.title }}</h1>
+        </div>
+        <div class="unit-progress" aria-label="Unit Progress">
+            <div class="progress-copy">
+                <span>Progress</span>
+                <strong id="roundLabel">Round 1 / 1</strong>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+
+    <div class="game-board-zone">
+        <div id="eventBanner" class="event-banner is-empty" role="status" aria-live="polite">
+            <strong data-event-title></strong>
+            <span data-event-message></span>
+        </div>
+
+        <section class="match-board" aria-label="Vocabulary matching board">
+            <div class="word-column word-column--uzbek">
+                <h2>Oʻzbek</h2>
+                <div id="uzbekWords" class="word-list"></div>
+            </div>
+            <div class="word-column word-column--english">
+                <h2>English</h2>
+                <div id="englishWords" class="word-list"></div>
+            </div>
+        </section>
+    </div>
+
+    <div id="gameLoading" class="game-loading" hidden>
+        <div class="game-loading-card">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Loading words…</p>
+        </div>
+    </div>
+
+    <div id="roundModal" class="game-modal" hidden role="dialog" aria-modal="true" aria-labelledby="roundModalTitle">
+        <div class="game-modal-card">
+            <img id="roundModalGif" class="event-gif" alt="" hidden>
+            <h2 id="roundModalTitle" class="game-modal-title"></h2>
+            <p id="roundModalMessage" class="game-modal-message"></p>
+        </div>
+    </div>
+
+    <div id="timerExpiredModal" class="game-modal" hidden role="dialog" aria-modal="true" aria-labelledby="timerExpiredTitle">
+        <div class="game-modal-card">
+            <img id="timerExpiredGif" class="event-gif" alt="" hidden>
+            <h2 id="timerExpiredTitle" class="game-modal-title"></h2>
+            <p id="timerExpiredMessage" class="game-modal-message"></p>
+            <dl class="stats-grid stats-grid--compact">
+                <div><dt>Score</dt><dd data-stat="score">0</dd></div>
+                <div><dt>Correct</dt><dd data-stat="correct">0</dd></div>
+            </dl>
+            <div class="modal-actions">
+                <button id="retryRoundBtn" class="primary-button" type="button">Retry Round</button>
+                <a class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameOverModal" class="game-modal" hidden role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+        <div class="game-modal-card">
+            <img id="gameOverGif" class="event-gif" alt="" hidden>
+            <h2 id="gameOverTitle" class="game-modal-title"></h2>
+            <p id="gameOverMessage" class="game-modal-message"></p>
+            <p id="gameOverScoreBig" class="modal-score-big">0</p>
+            <dl class="stats-grid stats-grid--compact">
+                <div><dt>Correct</dt><dd id="gameOverCorrect">0</dd></div>
+                <div><dt>Incorrect</dt><dd id="gameOverIncorrect">0</dd></div>
+            </dl>
+            <div class="modal-actions">
+                <button id="playAgainBtn" class="primary-button" type="button">Play Again</button>
+                <button id="continueBtn" class="secondary-button" type="button">Continue (-50)</button>
+                <a class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
+            </div>
+            <p id="continueHint" class="continue-hint" hidden>You need 50 points to buy another life.</p>
+        </div>
+    </div>
+
+    <div id="victoryModal" class="game-modal" hidden role="dialog" aria-modal="true" aria-labelledby="victoryTitle">
+        <div class="game-modal-card game-modal-card--victory">
+            <img id="victoryGif" class="event-gif" alt="" hidden>
+            <div id="victoryStars" class="victory-stars" aria-label="Stars earned"></div>
+            <h2 id="victoryTitle" class="game-modal-title"></h2>
+            <p id="victoryMessage" class="game-modal-message"></p>
+            <p id="victoryScoreBig" class="modal-score-big">0</p>
+            <dl class="stats-grid stats-grid--compact">
+                <div><dt>Correct</dt><dd id="victoryCorrect">0</dd></div>
+                <div><dt>Time</dt><dd id="victoryTime">0:00</dd></div>
+            </dl>
+            <div class="modal-actions">
+                {% if next_unit %}
+                    <a id="nextUnitBtn" class="primary-button" href="{% url 'vocabulary:unit_intro' next_unit.id %}">Next Unit</a>
+                {% else %}
+                    <a id="nextUnitBtn" class="primary-button" href="#" hidden>Next Unit</a>
+                {% endif %}
+                <button id="replayUnitBtn" class="secondary-button" type="button">Replay Unit</button>
+                <a id="victoryHomeBtn" class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vocabulary/js/game-events.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/game-logic.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/game-ui.js' %}" defer></script>
+{% endblock %}

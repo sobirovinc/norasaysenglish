@@ -1,0 +1,61 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Nora says English — fun Uzbek-English vocabulary matching games for students.">
+    <meta name="theme-color" content="#166a5b">
+    <title>{% block title %}Nora says English{% endblock %}</title>
+    <link rel="icon" href="{% static 'vocabulary/images/logo.jpg' %}" type="image/jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'vocabulary/css/styles.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% block site_header %}
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="site-brand" href="{% url 'vocabulary:home' %}">
+                <img src="{% if teacher.photo %}{{ teacher.photo.url }}{% else %}{% static 'vocabulary/images/logo.jpg' %}{% endif %}" alt="{{ teacher.name }} logo">
+                <span>Nora says English</span>
+            </a>
+            <nav class="site-nav" aria-label="Main navigation">
+                <a href="{% url 'vocabulary:home' %}">Home</a>
+                <a href="{% url 'vocabulary:about' %}">About</a>
+                {% if teacher.telegram_url %}
+                    <a href="{{ teacher.telegram_url }}" target="_blank" rel="noopener noreferrer">Telegram</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    {% endblock %}
+
+    <main class="app-shell">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block site_footer %}
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <p class="footer-brand">{{ teacher.name }} · {{ teacher.title }}</p>
+            <nav class="footer-nav" aria-label="Footer links">
+                <a href="{% url 'vocabulary:about' %}">About {{ teacher.name }}</a>
+                {% if teacher.telegram_url %}
+                    <a href="{{ teacher.telegram_url }}" target="_blank" rel="noopener noreferrer">Telegram</a>
+                {% endif %}
+                {% if teacher.instagram_url %}
+                    <a href="{{ teacher.instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>
+                {% endif %}
+            </nav>
+            <p class="footer-copy">Learn English vocabulary the fun way.</p>
+        </div>
+    </footer>
+    {% endblock %}
+
+    <script src="{% static 'vocabulary/js/progress.js' %}" defer></script>
+    <script src="{% static 'vocabulary/js/site.js' %}" defer></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}Nora says English — Learn Vocabulary{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-copy">
+        <p class="eyebrow">Ingliz tili · English vocabulary</p>
+        <h1>Learn English words the fun way</h1>
+        <p class="hero-lead">{{ teacher.headline }}</p>
+        {% if teacher.headline_uzbek %}
+            <p class="hero-lead hero-lead-uz">{{ teacher.headline_uzbek }}</p>
+        {% endif %}
+        <div class="hero-actions">
+            {% if levels %}
+                <a class="primary-button" href="{% url 'vocabulary:unit_list' levels.0.id %}">Start learning</a>
+            {% endif %}
+            <a class="secondary-button" href="{% url 'vocabulary:about' %}">Meet {{ teacher.name }}</a>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <img
+            class="hero-photo"
+            src="{% if teacher.photo %}{{ teacher.photo.url }}{% else %}{% static 'vocabulary/images/logo.jpg' %}{% endif %}"
+            alt="{{ teacher.name }}"
+        >
+    </div>
+</section>
+
+<a id="continueCard" class="continue-card" href="#" hidden>
+    <span class="eyebrow">Davom etish · Continue</span>
+    <strong id="continueUnitTitle">Your last unit</strong>
+    <span class="continue-arrow" aria-hidden="true">→</span>
+</a>
+
+<section class="how-it-works" aria-labelledby="howTitle">
+    <h2 id="howTitle">How it works</h2>
+    <ol class="steps-list">
+        <li>
+            <strong>Choose a level</strong>
+            <span>Beginner to Advanced</span>
+        </li>
+        <li>
+            <strong>Match words</strong>
+            <span>Uzbek ↔ English pairs</span>
+        </li>
+        <li>
+            <strong>Hear pronunciation</strong>
+            <span>Every correct answer</span>
+        </li>
+    </ol>
+</section>
+
+<section class="teacher-teaser" aria-labelledby="teacherTeaserTitle">
+    <div class="teacher-teaser-copy">
+        <h2 id="teacherTeaserTitle">Your teacher, {{ teacher.name }}</h2>
+        <p>{{ teacher.bio|truncatewords:35 }}</p>
+        <a class="text-link" href="{% url 'vocabulary:about' %}">Read full story →</a>
+    </div>
+</section>
+
+<section class="page-section" aria-labelledby="levelsTitle">
+    <div class="section-heading">
+        <h2 id="levelsTitle">Choose your level</h2>
+        <p class="section-sub">Bosqichni tanlang</p>
+    </div>
+
+    <div class="level-grid">
+        {% for level in levels %}
+            <a class="level-card" href="{% url 'vocabulary:unit_list' level.id %}">
+                <span class="level-card-label">{{ level.name }}</span>
+                <span class="level-card-meta">{{ level.unit_count }} unit{{ level.unit_count|pluralize }}</span>
+            </a>
+        {% empty %}
+            <div class="empty-state">
+                <p>Lessons are coming soon. Check back shortly!</p>
+                <p class="empty-state-uz">Darslar tez orada qoʻshiladi.</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

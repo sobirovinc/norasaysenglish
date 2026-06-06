@@ -1,0 +1,50 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}{{ unit.title }} | Nora says English{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'vocabulary:home' %}">Home</a>
+    <span aria-hidden="true">›</span>
+    <a href="{% url 'vocabulary:unit_list' unit.level.id %}">{{ unit.level.name }}</a>
+    <span aria-hidden="true">›</span>
+    <span>{{ unit.title }}</span>
+</nav>
+
+<section class="unit-intro-card">
+    <p class="eyebrow">{{ unit.level.name }}</p>
+    <h1>{{ unit.title }}</h1>
+
+    <dl class="intro-stats">
+        <div>
+            <dt>Words</dt>
+            <dd>{{ word_count }}</dd>
+        </div>
+        <div>
+            <dt>Rounds</dt>
+            <dd>{{ round_count }}</dd>
+        </div>
+        <div>
+            <dt>Est. time</dt>
+            <dd>~{{ estimated_minutes }} min</dd>
+        </div>
+    </dl>
+
+    <p class="intro-copy">
+        Match each Uzbek word with its English translation. Hear the correct pronunciation on every match.
+    </p>
+    <p class="intro-copy intro-copy-uz">
+        Har bir oʻzbek soʻzini inglizcha tarjimasi bilan moslang. Har toʻgʻri javobda talaffuzni eshiting.
+    </p>
+
+    {% if word_count %}
+        <a class="primary-button intro-start" href="{% url 'vocabulary:game' unit.id %}">Start matching</a>
+    {% else %}
+        <div class="empty-state">
+            <p>This unit has no words yet.</p>
+            <a class="secondary-button" href="{% url 'vocabulary:unit_list' unit.level.id %}">Back to units</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

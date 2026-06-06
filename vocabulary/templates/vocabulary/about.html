@@ -1,0 +1,69 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}About {{ teacher.name }} | Nora says English{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{% url 'vocabulary:home' %}">Home</a>
+    <span aria-hidden="true">›</span>
+    <span>About</span>
+</nav>
+
+<article class="about-page">
+    <header class="about-hero">
+        <img
+            class="about-photo"
+            src="{% if teacher.photo %}{{ teacher.photo.url }}{% else %}{% static 'vocabulary/images/logo.jpg' %}{% endif %}"
+            alt="{{ teacher.name }}"
+        >
+        <div class="about-intro">
+            <p class="eyebrow">{{ teacher.title }}</p>
+            <h1>{{ teacher.name }}</h1>
+            <p class="about-headline">{{ teacher.headline }}</p>
+            {% if teacher.headline_uzbek %}
+                <p class="about-headline-uz">{{ teacher.headline_uzbek }}</p>
+            {% endif %}
+            {% if teacher.years_experience %}
+                <p class="about-meta">{{ teacher.years_experience }}+ years of teaching experience</p>
+            {% endif %}
+        </div>
+    </header>
+
+    <section class="about-body">
+        <h2>About me</h2>
+        <div class="about-text">{{ teacher.bio|linebreaks }}</div>
+        {% if teacher.bio_uzbek %}
+            <h3>Oʻzbekcha</h3>
+            <div class="about-text">{{ teacher.bio_uzbek|linebreaks }}</div>
+        {% endif %}
+    </section>
+
+    {% if credentials %}
+        <section class="about-credentials">
+            <h2>Qualifications</h2>
+            <ul>
+                {% for item in credentials %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    <section class="about-contact">
+        <h2>Connect</h2>
+        <div class="contact-actions">
+            {% if teacher.telegram_url %}
+                <a class="secondary-button" href="{{ teacher.telegram_url }}" target="_blank" rel="noopener noreferrer">Telegram</a>
+            {% endif %}
+            {% if teacher.instagram_url %}
+                <a class="secondary-button" href="{{ teacher.instagram_url }}" target="_blank" rel="noopener noreferrer">Instagram</a>
+            {% endif %}
+            {% if teacher.email %}
+                <a class="secondary-button" href="mailto:{{ teacher.email }}">Email</a>
+            {% endif %}
+            <a class="primary-button" href="{% url 'vocabulary:home' %}">Start learning</a>
+        </div>
+    </section>
+</article>
+{% endblock %}
