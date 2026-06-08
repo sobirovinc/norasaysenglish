@@ -6,7 +6,7 @@ Reads configuration from environment variables (see .env.example).
 import os
 from pathlib import Path
 
-
+import dj_database_url
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,10 +33,11 @@ SECRET_KEY = os.getenv(
 
 DEBUG = env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = env_list(
-    'DJANGO_ALLOWED_HOSTS',
-    'norasaysenglish.uz,www.norasaysenglish.uz'
-)
+ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = env_list(
+#     'DJANGO_ALLOWED_HOSTS',
+#     'norasaysenglish.uz,www.norasaysenglish.uz'
+# )
 
 CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
 
@@ -91,6 +92,14 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     },
 }
+
+database_url = os.getenv('DATABASE_URL')
+if database_url:
+    DATABASES['default'] = dj_database_url.config(
+        default=database_url,
+        conn_max_age=600,
+        ssl_require=env_bool('DATABASE_SSL', False),
+    )
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

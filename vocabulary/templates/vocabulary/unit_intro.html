@@ -12,7 +12,7 @@
     <span>{{ unit.title }}</span>
 </nav>
 
-<section class="unit-intro-card">
+<section class="unit-intro-card unit-hub">
     <p class="eyebrow">{{ unit.level.name }}</p>
     <h1>{{ unit.title }}</h1>
 
@@ -22,8 +22,8 @@
             <dd>{{ word_count }}</dd>
         </div>
         <div>
-            <dt>Rounds</dt>
-            <dd>{{ round_count }}</dd>
+            <dt>Modes</dt>
+            <dd>3</dd>
         </div>
         <div>
             <dt>Est. time</dt>
@@ -31,15 +31,30 @@
         </div>
     </dl>
 
-    <p class="intro-copy">
-        Match each Uzbek word with its English translation. Hear the correct pronunciation on every match.
-    </p>
-    <p class="intro-copy intro-copy-uz">
-        Har bir oʻzbek soʻzini inglizcha tarjimasi bilan moslang. Har toʻgʻri javobda talaffuzni eshiting.
-    </p>
+    <p class="intro-copy">Choose how you want to practice this unit.</p>
+    <p class="intro-copy intro-copy-uz">Bu darsni qanday mashq qilishni tanlang.</p>
 
     {% if word_count %}
-        <a class="primary-button intro-start" href="{% url 'vocabulary:game' unit.id %}">Start matching</a>
+        <div class="mode-grid">
+            <a class="mode-card mode-card--study" href="{% url 'vocabulary:unit_vocabulary' unit.id %}">
+                <span class="mode-icon" aria-hidden="true">📖</span>
+                <strong>Study Vocabulary</strong>
+                <span>Review words with list view and flashcards before you play.</span>
+                <span class="mode-tag">Study</span>
+            </a>
+            <a class="mode-card mode-card--match" href="{% url 'vocabulary:game' unit.id %}">
+                <span class="mode-icon" aria-hidden="true">🎯</span>
+                <strong>Vocabulary Match</strong>
+                <span>Recognize Uzbek ↔ English pairs and hear pronunciation.</span>
+                <span class="mode-tag">Vocabulary</span>
+            </a>
+            <a class="mode-card mode-card--spell" href="{% url 'vocabulary:spelling' unit.id %}">
+                <span class="mode-icon" aria-hidden="true">⌨️</span>
+                <strong>Spelling Shooter</strong>
+                <span>Type the English spelling as words fall down the screen.</span>
+                <span class="mode-tag">Spelling</span>
+            </a>
+        </div>
     {% else %}
         <div class="empty-state">
             <p>This unit has no words yet.</p>

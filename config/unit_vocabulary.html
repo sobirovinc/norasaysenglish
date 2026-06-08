@@ -1,0 +1,94 @@
+{% extends "vocabulary/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vocabulary/css/study.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="study-page" id="studyRoot" data-unit-id="{{ unit.id }}">
+    <header class="study-header">
+        <div class="container">
+            <div class="header-main">
+                <div class="header-info">
+                    <h1>{{ unit.title }}</h1>
+                    <p class="word-count" id="studyCountLabel">{{ word_count }} Words</p>
+                </div>
+                
+                <div class="header-actions">
+                    <a href="{% url 'vocabulary:game' unit.id %}" class="btn btn-primary">Play Match Game</a>
+                    <a href="{% url 'vocabulary:spelling' unit.id %}" class="btn btn-secondary">Play Word Shooter</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="study-controls sticky-top">
+        <div class="container">
+            <div class="controls-grid">
+                <div class="search-box">
+                    <input type="text" id="studySearch" placeholder="Search vocabulary..." aria-label="Search">
+                </div>
+                
+                <div class="mode-toggle">
+                    <button type="button" class="toggle-btn" data-study-mode="list">Vocabulary List</button>
+                    <button type="button" class="toggle-btn" data-study-mode="flashcards">Flashcards</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="study-content container">
+        {% if word_count > 0 %}
+            <!-- List Mode -->
+            <div id="studyListPanel" class="study-panel">
+                <div id="studyListGrid" class="vocab-grid">
+                    {% for word in unit.words.all %}
+                        <div class="vocab-card" data-word-id="{{ word.id }}">
+                            <div class="card-content">
+                                <p class="uzbek-text">{{ word.uzbek_word }}</p>
+                                <p class="english-text">{{ word.english_word }}</p>
+                            </div>
+                            <button type="button" class="btn-speak" data-speak-word="{{ word.english_word }}">
+                                🔊 <span>Listen</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div id="studyListEmpty" class="empty-state" hidden>
+                    <p>No matches found for your search.</p>
+                </div>
+            </div>
+
+            <!-- Flashcard Mode -->
+            <div id="studyFlashPanel" class="study-panel" hidden>
+                <div class="flashcard-container">
+                    <div id="studyFlashCard" class="flashcard">
+                        <div class="flashcard-side-front">
+                            <p id="studyFlashUzbek" class="uzbek-display"></p>
+                            <button type="button" id="studyFlashReveal" class="btn-reveal">Tap To Reveal</button>
+                        </div>
+                        <div id="studyFlashEnglishContainer" class="flashcard-side-back" hidden>
+                            <p id="studyFlashEnglish" class="english-display"></p>
+                            <button type="button" id="studyFlashSpeak" class="btn-speak-large">🔊 Listen</button>
+                        </div>
+                    </div>
+
+                    <div class="flashcard-nav">
+                        <button type="button" id="studyFlashPrev" class="btn-nav">Previous</button>
+                        <span id="studyFlashProgress" class="progress-text">Card 1 of 1</span>
+                        <button type="button" id="studyFlashNext" class="btn-nav">Next</button>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="empty-unit">
+                <p>No vocabulary has been added to this unit yet.</p>
+                <a href="{% url 'vocabulary:home' %}" class="btn btn-outline">Return To Units</a>
+            </div>
+        {% endif %}
+    </main>
+
+    <script id="studyWordsData" type="application/json">{{ words_json|safe }}</script>
+</div>
+{% endblock %}

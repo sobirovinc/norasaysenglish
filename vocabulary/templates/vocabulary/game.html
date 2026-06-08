@@ -29,15 +29,9 @@
                 <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="currentColor"/>
             </svg>
         </a>
-        <button id="muteButton" class="topbar-button icon-button" type="button" aria-pressed="false" aria-label="Mute sound">
-            <svg class="topbar-icon icon-sound-on" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor"/>
-                <path d="M15.5 8.5a4.5 4.5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            <svg class="topbar-icon icon-sound-off" viewBox="0 0 24 24" aria-hidden="true" hidden>
-                <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor"/>
-                <path d="m16 9 5 5M21 9l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
+        <button id="muteButton" class="topbar-button icon-button mute-toggle-btn" type="button" aria-pressed="false" aria-label="Mute sound">
+            <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
+            <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
         </button>
         <div class="game-hud-stats">
             <div class="stat stat-lives" aria-label="Lives">

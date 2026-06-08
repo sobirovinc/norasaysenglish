@@ -61,16 +61,50 @@ def game(request, unit_id):
     })
 
 
+def spelling_game(request, unit_id):
+    unit = get_object_or_404(Unit.objects.select_related('level'), pk=unit_id)
+    return render(request, 'vocabulary/spelling.html', {'unit': unit})
+
+
+def unit_vocabulary(request, unit_id):
+    unit = get_object_or_404(
+        Unit.objects.select_related('level').prefetch_related('words'),
+        pk=unit_id,
+    )
+    words = list(unit.words.all())
+    words_payload = [
+        {
+            'id': word.id,
+            'uzbek': word.uzbek_word,
+            'english': word.english_word,
+        }
+        for word in words
+    ]
+    return render(request, 'vocabulary/unit_vocabulary.html', {
+        'unit': unit,
+        'words': words,
+        'word_count': len(words_payload),
+        'words_payload': words_payload,
+    })
+
+
 def unit_words_api(request, unit_id):
+    return JsonResponse(get_unit_words(unit_id), safe=False)
+
+
+def shooter_words_api(request, unit_id):
+    return JsonResponse(get_unit_words(unit_id), safe=False)
+
+
+def get_unit_words(unit_id):
     unit = get_object_or_404(Unit.objects.prefetch_related('words'), pk=unit_id)
-    words = [
+    return [
         {
             'uzbek': word.uzbek_word,
             'english': word.english_word,
         }
         for word in unit.words.all()
     ]
-    return JsonResponse(words, safe=False)
 
 
 def game_events_api(request):

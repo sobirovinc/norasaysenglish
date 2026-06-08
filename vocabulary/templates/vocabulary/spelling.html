@@ -1,0 +1,114 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}Spelling Shooter — {{ unit.title }}{% endblock %}
+{% block body_class %}shooter-page{% endblock %}
+{% block site_header %}{% endblock %}
+{% block site_footer %}{% endblock %}
+
+{% block content %}
+<div
+    id="shooterRoot"
+    class="shooter-shell"
+    data-unit-id="{{ unit.id }}"
+    data-words-api-url="{% url 'vocabulary:shooter_words_api' unit.id %}"
+    data-home-url="{% url 'vocabulary:home' %}"
+    data-unit-intro-url="{% url 'vocabulary:unit_intro' unit.id %}"
+    data-sound-laser="{% static 'vocabulary/audio/shooter/laser_beam.mp3' %}"
+    data-sound-explosion="{% static 'vocabulary/audio/shooter/explosion.mp3' %}"
+    data-sound-word-fall="{% static 'vocabulary/audio/shooter/word_falls.mp3' %}"
+    data-sound-wrong="{% static 'vocabulary/audio/shooter/wrong_character.mp3' %}"
+    data-sound-game-over="{% static 'vocabulary/audio/shooter/game_over.mp3' %}"
+>
+    <header class="shooter-topbar">
+        <a class="topbar-button icon-button" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+        <div class="shooter-topbar-copy">
+            <p class="eyebrow">{{ unit.level.name }}</p>
+            <strong>{{ unit.title }}</strong>
+        </div>
+        <a class="topbar-button" href="{% url 'vocabulary:home' %}">Home</a>
+        <button id="shooterMuteBtn" class="topbar-button icon-button mute-toggle-btn" type="button" aria-label="Mute sound" aria-pressed="false">
+            <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
+            <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
+        </button>
+    </header>
+
+    <p class="shooter-hint" id="shooterHint">Type the English spelling — focus on accuracy, not speed.</p>
+
+    <div class="shooter-stats-bar" id="shooterStatsBar" aria-live="polite">
+        <span id="shooterStatScore">Score: 0</span>
+        <span id="shooterStatMistakes">Mistakes: 0/5</span>
+        <span id="shooterStatFallen">Fallen: 0/3</span>
+        <span id="shooterStatDone">Done: 0/0</span>
+    </div>
+
+    <button id="shooterMuteBtnMobile" class="shooter-mute-btn mute-toggle-btn" type="button" aria-label="Mute sound" aria-pressed="false">
+        <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
+        <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
+    </button>
+
+    <button id="shooterPauseBtn" class="shooter-pause-btn" type="button" aria-label="Pause menu" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M5 6h3v12H5zm11 0h3v12h-3z" fill="currentColor"/>
+        </svg>
+    </button>
+
+    <div id="shooterStage" class="shooter-stage" tabindex="0" role="application" aria-label="Spelling shooter play area">
+        <div id="shooterGame" class="shooter-canvas-host" aria-label="Spelling shooter game"></div>
+        <div id="playerShip" class="shooter-ship" aria-hidden="true">
+            <svg viewBox="0 0 64 48" width="30" height="22" role="presentation">
+                <path d="M32 4 L56 40 L32 34 L8 40 Z" fill="#60a5fa" stroke="#bfdbfe" stroke-width="2"/>
+                <ellipse cx="32" cy="22" rx="6" ry="10" fill="#1e3a5f"/>
+            </svg>
+        </div>
+    </div>
+
+    <p id="shooterMobileToast" class="shooter-mobile-toast" aria-live="polite"></p>
+
+    <div id="shooterKeyboard" class="shooter-keyboard" aria-label="On-screen keyboard" hidden></div>
+
+    <div id="shooterPauseMenu" class="shooter-pause-menu" hidden role="dialog" aria-modal="true" aria-labelledby="shooterPauseTitle">
+        <div class="shooter-pause-card">
+            <h2 id="shooterPauseTitle">Paused</h2>
+            <p class="shooter-pause-unit">{{ unit.title }}</p>
+            <div class="modal-actions">
+                <button id="shooterResumeBtn" class="primary-button" type="button">Resume</button>
+                <a class="secondary-button" href="{% url 'vocabulary:unit_intro' unit.id %}">Back to Unit</a>
+                <a class="secondary-button" href="{% url 'vocabulary:home' %}">Home</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="shooterOverlay" class="shooter-overlay" hidden role="dialog" aria-modal="true">
+        <div class="shooter-overlay-card">
+            <h2 id="shooterOverlayTitle">Game Over</h2>
+            <p id="shooterOverlayMessage"></p>
+            <p class="shooter-overlay-score">Score: <span id="shooterOverlayScore">0</span></p>
+            <div class="modal-actions">
+                <button id="shooterContinueBtn" class="primary-button" type="button">Continue (−50)</button>
+                <button id="shooterRestartBtn" class="secondary-button" type="button">Play Again</button>
+                <a class="secondary-button" href="{% url 'vocabulary:unit_intro' unit.id %}">Back to Unit</a>
+                <a class="secondary-button" href="{% url 'vocabulary:home' %}">Home</a>
+            </div>
+            <p id="shooterContinueHint" class="continue-hint" hidden>You need 50 points to continue.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+<script src="{% static 'vocabulary/js/shooter/vocabulary.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/ScoreManager.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/WordManager.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/sounds.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/effects.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/keyboard.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/Enemy.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/GameScene.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/shooter/main.js' %}" defer></script>
+{% endblock %}
