@@ -2,31 +2,54 @@
 {% load static %}
 
 {% block title %}{{ unit.title }} - Study | Nora says English{% endblock %}
-
+{% block site_header %}{% endblock %}
+{% block site_footer %}{% endblock %}
 {% block content %}
-<nav class="breadcrumbs" aria-label="Breadcrumb">
-    <a href="{% url 'vocabulary:home' %}">Home</a>
-    <span aria-hidden="true">&gt;</span>
-    <a href="{% url 'vocabulary:unit_list' unit.level.id %}">{{ unit.level.name }}</a>
-    <span aria-hidden="true">&gt;</span>
-    <a href="{% url 'vocabulary:unit_intro' unit.id %}">{{ unit.title }}</a>
-    <span aria-hidden="true">&gt;</span>
-    <span>Study</span>
-</nav>
+<header class="game-topbar">
+        <a class="topbar-button icon-button back-link" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+        <a class="topbar-button icon-button" href="{% url 'vocabulary:home' %}" aria-label="Home">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="currentColor"/>
+            </svg>
+        </a>
+        <button id="muteButton" class="topbar-button icon-button mute-toggle-btn" type="button" aria-pressed="false" aria-label="Mute sound">
+            <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
+            <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
+        </button>
+</header>
 
 <section id="studyRoot" class="study-page">
 
-    <header class="study-header">
+  <header class="study-header">
+    <nav class="breadcrumbs title-row" aria-label="Breadcrumb">
+    <a href="{% url 'vocabulary:home' %}">Home</a>
+    <span aria-hidden="true">›</span>
+    <a href="{% url 'vocabulary:unit_list' unit.level.id %}">{{ unit.level.name }}</a>
+    <span aria-hidden="true">›</span>
+    <span>{{ unit.title }}</span>
+    <p id="studyCountLabel" class="study-count">
+            {{ word_count }} Word{{ word_count|pluralize }}
+        </p>
+    </nav>
+
+    <!-- <div class="title-row">
         <p class="eyebrow">{{ unit.level.name }}</p>
         <h1>{{ unit.title }}</h1>
-        <p id="studyCountLabel" class="study-count">{{ word_count }} Word{{ word_count|pluralize }}</p>
-    </header>
+        <p id="studyCountLabel" class="study-count">
+            {{ word_count }} Word{{ word_count|pluralize }}
+        </p>
+    </div> -->
+</header>
 
     {% if word_count %}
 
         {# ── Toolbar: search + mode toggle ── #}
         <div class="study-toolbar" id="studyToolbar">
-            <label class="study-search-label" for="studySearch">Search vocabulary</label>
+            <!-- <label class="study-search-label" for="studySearch">Search vocabulary</label> -->
             <input
                 id="studySearch"
                 class="study-search"
@@ -183,6 +206,7 @@
 
 {% block extra_js %}
 <script src="{% static 'vocabulary/js/speak.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/game-ui.js' %}" defer></script>
 {% if word_count %}
     <script src="{% static 'vocabulary/js/study.js' %}" defer></script>
 {% endif %}
