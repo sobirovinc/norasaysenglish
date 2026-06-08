@@ -15,6 +15,7 @@
 </nav>
 
 <section id="studyRoot" class="study-page">
+
     <header class="study-header">
         <p class="eyebrow">{{ unit.level.name }}</p>
         <h1>{{ unit.title }}</h1>
@@ -22,7 +23,9 @@
     </header>
 
     {% if word_count %}
-        <div class="study-toolbar">
+
+        {# ── Toolbar: search + mode toggle ── #}
+        <div class="study-toolbar" id="studyToolbar">
             <label class="study-search-label" for="studySearch">Search vocabulary</label>
             <input
                 id="studySearch"
@@ -32,7 +35,6 @@
                 autocomplete="off"
                 enterkeyhint="search"
             >
-
             <div class="study-mode-toggle" role="tablist" aria-label="Study mode">
                 <button type="button" class="study-mode-btn" data-study-mode="list" role="tab" aria-selected="true">
                     Vocabulary List
@@ -43,6 +45,7 @@
             </div>
         </div>
 
+        {# ── List panel ── #}
         <div id="studyListPanel" class="study-panel">
             <div id="studyListGrid" class="study-list-grid" aria-live="polite">
                 {% for word in words %}
@@ -69,43 +72,108 @@
             <p id="studyListEmpty" class="study-empty-filter" hidden>No words match your search.</p>
         </div>
 
+        {# ── Flashcard panel ── #}
         <div id="studyFlashPanel" class="study-panel" hidden>
-            <article id="studyFlashCard" class="study-flashcard" tabindex="0" aria-live="polite">
-                <p id="studyFlashUzbek" class="study-flash-uzbek"></p>
-                <button id="studyFlashReveal" class="study-flash-reveal" type="button">Tap To Reveal</button>
-                <div id="studyFlashEnglishContainer" hidden>
-                    <p id="studyFlashEnglish" class="study-flash-english"></p>
-                    <button id="studyFlashSpeak" class="vocab-card__speak study-flash-speak" type="button">
-                        <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
-                        <span>Listen</span>
-                    </button>
+
+            {# Progress bar #}
+            <div class="flash-progress-wrap">
+                <div class="flash-progress-header">
+                    <span id="flashCardCounter">Card 1 of {{ word_count }}</span>
+                    <span id="flashPercent">0%</span>
                 </div>
-            </article>
+                <div class="flash-progress-track">
+                    <div id="flashProgressBar" class="flash-progress-fill"></div>
+                </div>
+                <div class="flash-stats">
+                    <span class="flash-stat flash-stat--known">
+                        <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        Known: <strong id="statKnownCount">0</strong>
+                    </span>
+                    <span class="flash-stat flash-stat--review">
+                        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                        Review: <strong id="statReviewCount">0</strong>
+                    </span>
+                </div>
+            </div>
 
-            <p id="studyFlashProgress" class="study-flash-progress">Card 1 of {{ word_count }}</p>
+            {# 3-D flip card #}
+            <div class="flashcard-scene" id="cardContainer">
+                <div class="flashcard" id="interactiveCard" tabindex="0" aria-live="polite">
+                    <div class="flashcard__face flashcard__face--front">
+                        <p class="flashcard__hint-label">Uzbek</p>
+                        <p class="flashcard__word" id="cardFrontText"></p>
+                        <p class="flashcard__tap-hint">Tap to reveal</p>
+                    </div>
+                    <div class="flashcard__face flashcard__face--back">
+                        <p class="flashcard__hint-label">English</p>
+                        <p class="flashcard__word flashcard__word--english" id="cardBackEnText"></p>
+                        <button class="vocab-card__speak" type="button" id="cardAudioBtn" aria-label="Listen to pronunciation">
+                            <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+                            <span>Listen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
+            {# Know / Need Practice actions #}
+            <div class="flash-actions" id="flashActions">
+                <button class="secondary-button flash-action-btn flash-action-btn--review" type="button" id="actionReviewBtn">
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Need Practice
+                </button>
+                <button class="primary-button flash-action-btn flash-action-btn--know" type="button" id="actionKnowBtn">
+                    I Know This <i class="fa-solid fa-check" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            {# Shuffle #}
             <div class="study-flash-actions">
                 <button id="studyFlashShuffle" class="secondary-button" type="button">
                     <i class="fa-solid fa-shuffle" aria-hidden="true"></i> Shuffle Deck
                 </button>
             </div>
+        </div>
 
-            <div class="study-flash-nav">
-                <button id="studyFlashPrev" class="secondary-button" type="button">Previous</button>
-                <button id="studyFlashNext" class="secondary-button" type="button">Next</button>
+        {# ── Summary panel ── #}
+        <div id="studySummaryPanel" class="study-panel" hidden>
+            <div class="summary-card">
+                <p class="summary-icon" aria-hidden="true">🎉</p>
+                <h2 class="summary-title">Session Complete!</h2>
+                <p class="summary-subtitle">Here's how you did:</p>
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <span class="summary-stat__num" id="sumKnown">0</span>
+                        <span class="summary-stat__lbl">Known</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="summary-stat__num" id="sumReview">0</span>
+                        <span class="summary-stat__lbl">Review</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="summary-stat__num" id="sumMastery">0%</span>
+                        <span class="summary-stat__lbl">Mastery</span>
+                    </div>
+                </div>
+                <div class="summary-actions">
+                    <button class="primary-button" type="button" id="btnRestartSession">
+                        <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Study Again
+                    </button>
+                </div>
             </div>
         </div>
 
-        <nav class="study-actions" aria-label="Play games">
+        {# ── Game links ── #}
+        <nav class="study-actions" aria-label="Play games" id="studyGameLinks">
             <a class="primary-button" href="{% url 'vocabulary:game' unit.id %}">Play Match Game</a>
             <a class="secondary-button" href="{% url 'vocabulary:spelling' unit.id %}">Play Word Shooter</a>
         </nav>
+
     {% else %}
         <div class="empty-state study-empty-state">
             <p>No vocabulary has been added to this unit yet.</p>
             <a class="secondary-button" href="{% url 'vocabulary:unit_list' unit.level.id %}">Return To Units</a>
         </div>
     {% endif %}
+
 </section>
 
 {% if word_count %}

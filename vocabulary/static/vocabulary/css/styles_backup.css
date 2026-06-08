@@ -1280,7 +1280,6 @@ body.game-page.modal-open {
     gap: 12px;
 }
 
-/* List grid */
 .study-list-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -1335,264 +1334,67 @@ body.game-page.modal-open {
     border-color: var(--brand);
 }
 
-/* ── Flashcard progress bar ── */
-.flash-progress-wrap {
+.study-flashcard {
     display: grid;
-    gap: 8px;
-}
-
-.flash-progress-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.88rem;
-    font-weight: 800;
-    color: var(--muted);
-}
-
-.flash-progress-track {
-    height: 8px;
-    border-radius: 999px;
-    background: var(--line);
-    overflow: hidden;
-}
-
-.flash-progress-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, var(--brand), #2f9e7d);
-    transition: width 0.3s ease;
-}
-
-.flash-stats {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    font-size: 0.9rem;
-    font-weight: 800;
-}
-
-.flash-stat {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.flash-stat--known { color: var(--success); }
-.flash-stat--review { color: var(--danger); }
-
-/* ── 3-D flip card ── */
-.flashcard-scene {
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-    perspective: 1200px;
-    height: 300px;
-}
-
-.flashcard {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    user-select: none;
-}
-
-.flashcard.flipped {
-    transform: rotateY(180deg);
-}
-
-.flashcard__face {
-    position: absolute;
-    inset: 0;
-    backface-visibility: hidden;
-    border-radius: var(--radius);
+    gap: 14px;
+    place-items: center;
+    min-height: 240px;
+    padding: 24px 18px;
     border: 2px solid var(--line);
-    background: var(--surface);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, var(--surface) 0%, #f8fbfa 100%);
     box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    padding: 28px 24px;
     text-align: center;
+    cursor: pointer;
 }
 
-.flashcard__face--back {
-    transform: rotateY(180deg);
-    background: linear-gradient(160deg, var(--surface) 0%, var(--brand-soft) 100%);
-    border-color: var(--brand);
-}
-
-.flashcard__hint-label {
+.study-flash-uzbek {
     margin: 0;
-    font-size: 0.72rem;
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
     font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-.flashcard__word {
-    margin: 0;
-    font-size: clamp(1.8rem, 6vw, 2.6rem);
-    font-weight: 800;
-    line-height: 1.1;
     color: var(--ink);
 }
 
-.flashcard__word--english {
+.study-flash-english {
+    margin: 0;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    font-weight: 800;
     color: var(--brand-dark);
 }
 
-.flashcard__tap-hint {
-    margin: 0;
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--muted);
+.study-flash-reveal {
+    min-height: 44px;
+    padding: 10px 18px;
     border: 1px dashed var(--line);
     border-radius: 999px;
-    padding: 6px 16px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 800;
+    cursor: pointer;
 }
 
-/* Swipe animations */
-.flashcard.swipe-right {
-    transform: translate3d(160%, 0, 0) rotate(18deg) !important;
-    opacity: 0;
-    transition: transform 0.38s ease-out, opacity 0.38s ease-out !important;
+.study-flashcard.is-revealed .study-flash-reveal {
+    display: none;
 }
 
-.flashcard.swipe-left {
-    transform: translate3d(-160%, 0, 0) rotate(-18deg) !important;
-    opacity: 0;
-    transition: transform 0.38s ease-out, opacity 0.38s ease-out !important;
+.study-flash-progress {
+    margin: 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 800;
 }
 
-/* ── Know / Need Practice buttons ── */
-.flash-actions {
+.study-flash-nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.flash-action-btn {
-    min-height: 52px;
-    font-size: 0.95rem;
-    justify-content: center;
-    gap: 8px;
-}
-
-.flash-action-btn--know {
-    background: var(--success);
-    border-color: var(--success);
-    color: #fff;
-}
-
-.flash-action-btn--know:hover {
-    background: #257a36;
-    border-color: #257a36;
-}
-
-.flash-action-btn--review {
-    border-color: var(--danger);
-    color: var(--danger);
-}
-
-.flash-action-btn--review:hover {
-    background: #fef2f2;
-}
-
-/* ── Summary card ── */
-.summary-card {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 36px 28px;
-    border: 1px solid var(--line);
-    border-radius: calc(var(--radius) + 2px);
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    text-align: center;
-    display: grid;
-    gap: 16px;
-}
-
-.summary-icon {
-    font-size: 2.8rem;
-    margin: 0;
-}
-
-.summary-title {
-    margin: 0;
-    font-size: clamp(1.4rem, 4vw, 1.9rem);
-}
-
-.summary-subtitle {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.95rem;
-}
-
-.summary-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
 }
 
-.summary-stat {
-    display: grid;
-    gap: 4px;
-    padding: 14px 10px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--bg);
-}
-
-.summary-stat__num {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--brand-dark);
-}
-
-.summary-stat__lbl {
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-}
-
-.summary-actions {
-    display: grid;
-    gap: 10px;
-}
-
-.summary-actions .primary-button {
-    min-height: 50px;
-    justify-content: center;
-    gap: 8px;
-}
-
-/* ── Shared study utils ── */
-.study-flash-actions {
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.study-flash-actions .secondary-button {
-    width: 100%;
+.study-flash-nav .secondary-button {
     min-height: 48px;
-    justify-content: center;
-    gap: 8px;
 }
 
 .study-actions {
@@ -1605,7 +1407,6 @@ body.game-page.modal-open {
 .study-actions .secondary-button {
     min-height: 48px;
     text-align: center;
-    justify-content: center;
 }
 
 .study-empty-filter,
@@ -1622,16 +1423,8 @@ body.game-page.modal-open {
         grid-template-columns: 1fr;
     }
 
-    .flashcard-scene {
-        height: 260px;
-    }
-
-    .flash-actions {
-        grid-template-columns: 1fr;
-    }
-
-    .summary-stats {
-        grid-template-columns: repeat(3, 1fr);
+    .study-flashcard {
+        min-height: 220px;
     }
 }
 
