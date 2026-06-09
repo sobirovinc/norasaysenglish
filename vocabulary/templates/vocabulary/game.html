@@ -109,7 +109,7 @@
                 <div><dt>Score</dt><dd data-stat="score">0</dd></div>
                 <div><dt>Correct</dt><dd data-stat="correct">0</dd></div>
             </dl>
-            <div class="modal-actions">
+            <div class="modal-actions modal-actions--two">
                 <button id="retryRoundBtn" class="primary-button" type="button">Retry Round</button>
                 <a class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
             </div>
@@ -126,7 +126,7 @@
                 <div><dt>Correct</dt><dd id="gameOverCorrect">0</dd></div>
                 <div><dt>Incorrect</dt><dd id="gameOverIncorrect">0</dd></div>
             </dl>
-            <div class="modal-actions">
+            <div class="modal-actions modal-actions--three">
                 <button id="playAgainBtn" class="primary-button" type="button">Play Again</button>
                 <button id="continueBtn" class="secondary-button" type="button">Continue (-50)</button>
                 <a class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
@@ -146,14 +146,14 @@
                 <div><dt>Correct</dt><dd id="victoryCorrect">0</dd></div>
                 <div><dt>Time</dt><dd id="victoryTime">0:00</dd></div>
             </dl>
-            <div class="modal-actions">
+            <div class="modal-actions modal-actions--three">
+                <button id="replayUnitBtn" class="secondary-button" type="button">Replay Unit</button>
+                <a id="victoryHomeBtn" class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
                 {% if next_unit %}
                     <a id="nextUnitBtn" class="primary-button" href="{% url 'vocabulary:unit_intro' next_unit.id %}">Next Unit</a>
                 {% else %}
                     <a id="nextUnitBtn" class="primary-button" href="#" hidden>Next Unit</a>
                 {% endif %}
-                <button id="replayUnitBtn" class="secondary-button" type="button">Replay Unit</button>
-                <a id="victoryHomeBtn" class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
             </div>
         </div>
     </div>

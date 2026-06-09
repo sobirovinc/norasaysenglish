@@ -1029,6 +1029,22 @@ body.game-page.modal-open {
     gap: 10px;
 }
 
+.modal-actions--three {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.modal-actions--three > :last-child {
+    grid-column: 1 / -1;
+}
+
+.modal-actions--two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
 .continue-hint {
     margin: 12px 0 0;
     color: var(--danger);
