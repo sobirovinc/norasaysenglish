@@ -4,52 +4,56 @@
 {% block title %}{{ unit.title }} - Study | Nora says English{% endblock %}
 {% block site_header %}{% endblock %}
 {% block site_footer %}{% endblock %}
+
 {% block content %}
 <header class="game-topbar">
-        <a class="topbar-button icon-button back-link" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
-            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </a>
-        <a class="topbar-button icon-button" href="{% url 'vocabulary:home' %}" aria-label="Home">
-            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="currentColor"/>
-            </svg>
-        </a>
-        <button id="muteButton" class="topbar-button icon-button mute-toggle-btn" type="button" aria-pressed="false" aria-label="Mute sound">
-            <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
-            <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
-        </button>
+    <a class="topbar-button icon-button back-link" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
+        <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </a>
+    <a class="topbar-button icon-button" href="{% url 'vocabulary:home' %}" aria-label="Home">
+        <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="currentColor"/>
+        </svg>
+    </a>
+    <button id="muteButton" class="topbar-button icon-button mute-toggle-btn" type="button" aria-pressed="false" aria-label="Mute sound">
+        <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
+        <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
+    </button>
 </header>
 
 <section id="studyRoot" class="study-page">
 
-  <header class="study-header">
-    <nav class="breadcrumbs title-row" aria-label="Breadcrumb">
-    <a href="{% url 'vocabulary:home' %}">Home</a>
-    <span aria-hidden="true">›</span>
-    <a href="{% url 'vocabulary:unit_list' unit.level.id %}">{{ unit.level.name }}</a>
-    <span aria-hidden="true">›</span>
-    <span>{{ unit.title }}</span>
-    <p id="studyCountLabel" class="study-count">
-            {{ word_count }} Word{{ word_count|pluralize }}
-        </p>
-    </nav>
+    <header class="study-header">
+        <nav class="breadcrumbs title-row" aria-label="Breadcrumb">
+            <a href="{% url 'vocabulary:home' %}">Home</a>
+            <span aria-hidden="true">›</span>
+            <a href="{% url 'vocabulary:unit_list' unit.level.id %}">{{ unit.level.name }}</a>
+            <span aria-hidden="true">›</span>
+            <span>{{ unit.title }}</span>
 
-    <!-- <div class="title-row">
-        <p class="eyebrow">{{ unit.level.name }}</p>
-        <h1>{{ unit.title }}</h1>
-        <p id="studyCountLabel" class="study-count">
-            {{ word_count }} Word{{ word_count|pluralize }}
-        </p>
-    </div> -->
-</header>
+            <div class="study-info">
+                <p id="studyCountLabel" class="study-count">
+                    {{ word_count }} Word{{ word_count|pluralize }}
+                </p>
+                <span id="studyPageLabel" class="study-page-label" hidden></span>
+            </div>
+        </nav>
+    </header>
 
     {% if word_count %}
 
-        {# ── Toolbar: search + mode toggle ── #}
+        {# ── Toolbar: mode toggle + search ── #}
         <div class="study-toolbar" id="studyToolbar">
-            <!-- <label class="study-search-label" for="studySearch">Search vocabulary</label> -->
+            <div class="study-mode-toggle" role="tablist" aria-label="Study mode">
+                <button type="button" class="study-mode-btn is-active" data-study-mode="list" role="tab" aria-selected="true">
+                    Vocabulary List
+                </button>
+                <button type="button" class="study-mode-btn" data-study-mode="flashcards" role="tab" aria-selected="false">
+                    Flashcards
+                </button>
+            </div>
             <input
                 id="studySearch"
                 class="study-search"
@@ -57,15 +61,8 @@
                 placeholder="Search Uzbek or English..."
                 autocomplete="off"
                 enterkeyhint="search"
+                aria-label="Search vocabulary"
             >
-            <div class="study-mode-toggle" role="tablist" aria-label="Study mode">
-                <button type="button" class="study-mode-btn" data-study-mode="list" role="tab" aria-selected="true">
-                    Vocabulary List
-                </button>
-                <button type="button" class="study-mode-btn" data-study-mode="flashcards" role="tab" aria-selected="false">
-                    Flashcards
-                </button>
-            </div>
         </div>
 
         {# ── List panel ── #}
@@ -93,15 +90,25 @@
                 {% endfor %}
             </div>
             <p id="studyListEmpty" class="study-empty-filter" hidden>No words match your search.</p>
+
+            {# Pagination #}
+            <nav class="study-pagination" id="studyPagination" aria-label="Vocabulary pages" hidden>
+                <button type="button" class="study-page-btn" id="pagePrev" aria-label="Previous page">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <span class="study-page-dots" id="pageDots"></span>
+                <button type="button" class="study-page-btn" id="pageNext" aria-label="Next page">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </nav>
         </div>
 
         {# ── Flashcard panel ── #}
         <div id="studyFlashPanel" class="study-panel" hidden>
 
-            {# Progress bar #}
             <div class="flash-progress-wrap">
                 <div class="flash-progress-header">
-                    <span id="flashCardCounter">Card 1 of {{ word_count }}</span>
+                    <span id="flashCardCounter">Remaining: {{ word_count }} / {{ word_count }}</span>
                     <span id="flashPercent">0%</span>
                 </div>
                 <div class="flash-progress-track">
@@ -119,8 +126,9 @@
                 </div>
             </div>
 
-            {# 3-D flip card #}
             <div class="flashcard-scene" id="cardContainer">
+                <div class="swipe-hint swipe-hint--left" id="swipeHintLeft" aria-hidden="true"><span>Practice</span></div>
+                <div class="swipe-hint swipe-hint--right" id="swipeHintRight" aria-hidden="true"><span>Known!</span></div>
                 <div class="flashcard" id="interactiveCard" tabindex="0" aria-live="polite">
                     <div class="flashcard__face flashcard__face--front">
                         <p class="flashcard__hint-label">Uzbek</p>
@@ -138,17 +146,15 @@
                 </div>
             </div>
 
-            {# Know / Need Practice actions #}
             <div class="flash-actions" id="flashActions">
-                <button class="secondary-button flash-action-btn flash-action-btn--review" type="button" id="actionReviewBtn">
+                <button class="flash-action-btn flash-action-btn--review" type="button" id="actionReviewBtn">
                     <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Need Practice
                 </button>
-                <button class="primary-button flash-action-btn flash-action-btn--know" type="button" id="actionKnowBtn">
+                <button class="flash-action-btn flash-action-btn--know" type="button" id="actionKnowBtn">
                     I Know This <i class="fa-solid fa-check" aria-hidden="true"></i>
                 </button>
             </div>
 
-            {# Shuffle #}
             <div class="study-flash-actions">
                 <button id="studyFlashShuffle" class="secondary-button" type="button">
                     <i class="fa-solid fa-shuffle" aria-hidden="true"></i> Shuffle Deck
@@ -186,8 +192,14 @@
 
         {# ── Game links ── #}
         <nav class="study-actions" aria-label="Play games" id="studyGameLinks">
-            <a class="primary-button" href="{% url 'vocabulary:game' unit.id %}">Play Match Game</a>
-            <a class="secondary-button" href="{% url 'vocabulary:spelling' unit.id %}">Play Word Shooter</a>
+            <a class="secondary-button" href="{% url 'vocabulary:game' unit.id %}">
+                <span class="mode-icon" aria-hidden="true">🎯</span>
+                Match Game
+            </a>
+            <a class="secondary-button" href="{% url 'vocabulary:spelling' unit.id %}">
+                <span class="mode-icon" aria-hidden="true">⌨️</span>
+                Word Shooter
+            </a>
         </nav>
 
     {% else %}
@@ -206,7 +218,6 @@
 
 {% block extra_js %}
 <script src="{% static 'vocabulary/js/speak.js' %}" defer></script>
-<script src="{% static 'vocabulary/js/game-ui.js' %}" defer></script>
 {% if word_count %}
     <script src="{% static 'vocabulary/js/study.js' %}" defer></script>
 {% endif %}

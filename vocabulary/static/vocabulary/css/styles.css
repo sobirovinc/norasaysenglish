@@ -58,10 +58,6 @@ img {
     padding-bottom: calc(32px + env(safe-area-inset-bottom));
 }
 
-[hidden] {
-    display: none !important;
-}
-
 /* Site chrome */
 .site-header {
     position: sticky;
@@ -72,31 +68,15 @@ img {
     backdrop-filter: blur(10px);
 }
 
-.site-header .container-fluid {
-    padding-left: 2rem;
-    padding-right: 2rem;
-}
-
 .site-header-inner,
 .site-footer-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-
-    max-width: 1200px;
-    width: 100%;
-
+    width: min(1040px, 100%);
     margin: 0 auto;
-    padding: 12px 24px;
-}
-
-.navbar-collapse {
-    margin-left: auto;
-}
-
-.navbar-nav {
-    margin-left: auto;
+    padding: 12px 16px;
 }
 
 .site-brand {
@@ -518,6 +498,12 @@ h2 {
     font-weight: 800;
     text-decoration: none;
     cursor: pointer;
+}
+
+nav.study-actions .secondary-button {
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    line-height: 1.2;
 }
 
 .primary-button {
@@ -1040,13 +1026,6 @@ body.game-page.modal-open {
         text-align: center;
     }
 
-    .site-header-inner {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-    }
-
     .site-nav,
     .footer-nav {
         justify-content: center;
@@ -1166,10 +1145,14 @@ body.game-page.modal-open {
 /* Unit mode hub */
 .unit-hub .mode-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: 1fr;
     gap: 14px;
     margin-top: 20px;
     text-align: left;
+}
+
+.mode-card--study {
+    grid-column: 1 / -1;
 }
 
 .mode-card {
@@ -1183,16 +1166,6 @@ body.game-page.modal-open {
     color: var(--ink);
     text-decoration: none;
     transition: transform 140ms ease, border-color 140ms ease;
-}
-
-.mode-card--study {
-    grid-column: 1 / -1;
-}
-
-@media (max-width: 768px) {
-    .mode-card--study {
-        grid-column: auto;
-    }
 }
 
 .mode-card:hover {
@@ -1235,7 +1208,9 @@ body.game-page.modal-open {
     color: #0369a1;
 }
 
-/* Vocabulary study */
+/* ═══════════════════════════════════════════
+   Vocabulary study page
+   ═══════════════════════════════════════════ */
 .study-page {
     display: grid;
     gap: 18px;
@@ -1243,37 +1218,98 @@ body.game-page.modal-open {
     margin: 0 auto;
 }
 
-.study-header h1 {
-    margin-bottom: 4px;
+/* ── Header ── */
+.study-header {
+    display: grid;
+    gap: 4px;
 }
 
-.study-count {
-    margin: 0;
-    color: var(--muted);
-    font-size: 1rem;
+.study-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
     font-weight: 800;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 4px;
+    width: fit-content;
+}
+
+.study-back-btn:hover { color: var(--brand); }
+
+.study-header__titles h1 { margin-bottom: 0; }
+
+.study-header__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .title-row {
     display: flex;
     align-items: center;
+    gap: 8px;
+}
+
+.study-info {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .study-count {
-    margin-left: auto;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 800;
 }
 
+.study-page-label {
+    margin: 0;
+    color: var(--brand-dark);
+    font-size: 0.88rem;
+    font-weight: 800;
+    background: var(--brand-soft);
+    padding: 2px 10px;
+    border-radius: 999px;
+}
+
+/* ── Toolbar: mode toggle on top, search below ── */
 .study-toolbar {
     display: grid;
-    gap: 12px;
+    gap: 10px;
 }
 
-.study-search-label {
-    font-size: 0.78rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+.study-mode-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.study-mode-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: calc(var(--radius) - 4px);
+    background: transparent;
     color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.study-mode-btn.is-active {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
 }
 
 .study-search {
@@ -1293,40 +1329,13 @@ body.game-page.modal-open {
     box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
-.study-mode-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 4px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-}
-
-.study-mode-btn {
-    min-height: 44px;
-    padding: 10px 12px;
-    border: none;
-    border-radius: calc(var(--radius) - 2px);
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    font-size: 0.9rem;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.study-mode-btn.is-active {
-    background: var(--brand-soft);
-    color: var(--brand-dark);
-}
-
+/* ── Panel (shared) ── */
 .study-panel {
     display: grid;
-    gap: 12px;
+    gap: 14px;
 }
 
-/* List grid */
+/* ── Vocabulary list ── */
 .study-list-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -1343,22 +1352,9 @@ body.game-page.modal-open {
     box-shadow: var(--shadow);
 }
 
-.vocab-card__uzbek {
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: var(--ink);
-}
-
-.vocab-card__english {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--brand-dark);
-}
-
-.vocab-card__extra {
-    font-size: 0.88rem;
-    color: var(--muted);
-}
+.vocab-card__uzbek  { font-size: 1.15rem; font-weight: 800; color: var(--ink); }
+.vocab-card__english { font-size: 1rem; font-weight: 700; color: var(--brand-dark); }
+.vocab-card__extra  { font-size: 0.88rem; color: var(--muted); }
 
 .vocab-card__speak {
     display: inline-flex;
@@ -1377,15 +1373,58 @@ body.game-page.modal-open {
     cursor: pointer;
 }
 
-.vocab-card__speak:hover {
-    border-color: var(--brand);
+.vocab-card__speak:hover { border-color: var(--brand); }
+
+/* ── Pagination ── */
+.study-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 4px 0;
 }
 
-/* ── Flashcard progress bar ── */
-.flash-progress-wrap {
-    display: grid;
-    gap: 8px;
+.study-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.9rem;
+    cursor: pointer;
 }
+
+.study-page-btn:disabled { opacity: 0.35; cursor: default; }
+.study-page-btn:not(:disabled):hover { border-color: var(--brand); color: var(--brand); }
+
+.study-page-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.page-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: var(--line);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.page-dot.is-active {
+    background: var(--brand);
+    transform: scale(1.3);
+}
+
+/* ── Flash: progress bar ── */
+.flash-progress-wrap { display: grid; gap: 8px; }
 
 .flash-progress-header {
     display: flex;
@@ -1421,13 +1460,8 @@ body.game-page.modal-open {
     font-weight: 800;
 }
 
-.flash-stat {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.flash-stat--known { color: var(--success); }
+.flash-stat { display: inline-flex; align-items: center; gap: 6px; }
+.flash-stat--known  { color: var(--success); }
 .flash-stat--review { color: var(--danger); }
 
 /* ── 3-D flip card ── */
@@ -1436,7 +1470,40 @@ body.game-page.modal-open {
     max-width: 480px;
     margin: 0 auto;
     perspective: 1200px;
-    height: 300px;
+    /* Taller card */
+    height: 360px;
+    position: relative;
+}
+
+/* Swipe hint overlays (sit inside the scene, behind the card) */
+.swipe-hint {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    z-index: 0;
+}
+
+.swipe-hint--left {
+    background: linear-gradient(135deg, rgba(220,38,38,0.18) 0%, rgba(220,38,38,0.05) 100%);
+    color: #dc2626;
+    border: 2px solid rgba(220,38,38,0.3);
+    border-radius: var(--radius);
+}
+
+.swipe-hint--right {
+    background: linear-gradient(135deg, rgba(22,163,74,0.18) 0%, rgba(22,163,74,0.05) 100%);
+    color: #16a34a;
+    border: 2px solid rgba(22,163,74,0.3);
+    border-radius: var(--radius);
 }
 
 .flashcard {
@@ -1447,11 +1514,10 @@ body.game-page.modal-open {
     transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     user-select: none;
+    z-index: 1;
 }
 
-.flashcard.flipped {
-    transform: rotateY(180deg);
-}
+.flashcard.flipped { transform: rotateY(180deg); }
 
 .flashcard__face {
     position: absolute;
@@ -1465,8 +1531,8 @@ body.game-page.modal-open {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 12px;
-    padding: 28px 24px;
+    gap: 14px;
+    padding: 32px 28px;
     text-align: center;
 }
 
@@ -1487,15 +1553,13 @@ body.game-page.modal-open {
 
 .flashcard__word {
     margin: 0;
-    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    font-size: clamp(2rem, 7vw, 2.8rem);
     font-weight: 800;
     line-height: 1.1;
     color: var(--ink);
 }
 
-.flashcard__word--english {
-    color: var(--brand-dark);
-}
+.flashcard__word--english { color: var(--brand-dark); }
 
 .flashcard__tap-hint {
     margin: 0;
@@ -1504,10 +1568,10 @@ body.game-page.modal-open {
     color: var(--muted);
     border: 1px dashed var(--line);
     border-radius: 999px;
-    padding: 6px 16px;
+    padding: 6px 18px;
 }
 
-/* Swipe animations */
+/* Swipe-off exit animations */
 .flashcard.swipe-right {
     transform: translate3d(160%, 0, 0) rotate(18deg) !important;
     opacity: 0;
@@ -1520,10 +1584,10 @@ body.game-page.modal-open {
     transition: transform 0.38s ease-out, opacity 0.38s ease-out !important;
 }
 
-/* ── Know / Need Practice buttons ── */
+/* ── Know / Need Practice buttons — always side by side ── */
 .flash-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;   /* always 2 columns, no exceptions */
     gap: 12px;
     max-width: 480px;
     margin: 0 auto;
@@ -1531,30 +1595,57 @@ body.game-page.modal-open {
 }
 
 .flash-action-btn {
-    min-height: 52px;
-    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 54px;
+    padding: 12px 10px;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.flash-action-btn:active { transform: scale(0.97); }
+
+.flash-action-btn--know {
+    background: var(--success, #16a34a);
+    border-color: var(--success, #16a34a);
+    color: #fff;
+}
+
+.flash-action-btn--know:hover { background: #15803d; border-color: #15803d; }
+
+.flash-action-btn--review {
+    background: var(--surface);
+    border-color: var(--danger, #dc2626);
+    color: var(--danger, #dc2626);
+}
+
+.flash-action-btn--review:hover { background: #fef2f2; }
+
+/* ── Shared flash utils ── */
+.study-flash-actions {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.study-flash-actions .secondary-button {
+    width: 100%;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
     gap: 8px;
 }
 
-.flash-action-btn--know {
-    background: var(--success);
-    border-color: var(--success);
-    color: #fff;
-}
-
-.flash-action-btn--know:hover {
-    background: #257a36;
-    border-color: #257a36;
-}
-
-.flash-action-btn--review {
-    border-color: var(--danger);
-    color: var(--danger);
-}
-
-.flash-action-btn--review:hover {
-    background: #fef2f2;
+button#studyFlashShuffle {
+    margin: 10px 0px;
 }
 
 /* ── Summary card ── */
@@ -1571,21 +1662,9 @@ body.game-page.modal-open {
     gap: 16px;
 }
 
-.summary-icon {
-    font-size: 2.8rem;
-    margin: 0;
-}
-
-.summary-title {
-    margin: 0;
-    font-size: clamp(1.4rem, 4vw, 1.9rem);
-}
-
-.summary-subtitle {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.95rem;
-}
+.summary-icon   { font-size: 2.8rem; margin: 0; }
+.summary-title  { margin: 0; font-size: clamp(1.4rem, 4vw, 1.9rem); }
+.summary-subtitle { margin: 0; color: var(--muted); font-size: 0.95rem; }
 
 .summary-stats {
     display: grid;
@@ -1616,31 +1695,17 @@ body.game-page.modal-open {
     color: var(--muted);
 }
 
-.summary-actions {
-    display: grid;
-    gap: 10px;
-}
+.summary-actions { display: grid; gap: 10px; }
 
 .summary-actions .primary-button {
     min-height: 50px;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
     gap: 8px;
 }
 
-/* ── Shared study utils ── */
-.study-flash-actions {
-    max-width: 480px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.study-flash-actions .secondary-button {
-    width: 100%;
-    min-height: 48px;
-    justify-content: center;
-    gap: 8px;
-}
-
+/* ── Game links ── */
 .study-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1651,40 +1716,115 @@ body.game-page.modal-open {
 .study-actions .secondary-button {
     min-height: 48px;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
 }
 
 .study-empty-filter,
-.study-empty-state {
-    text-align: center;
+.study-empty-state { text-align: center; }
+
+/* ── Flashcard mode: everything fits in one viewport ── */
+body.flashcard-mode {
+    overflow: hidden;
 }
 
+/* Reclaim the large bottom padding in flashcard mode */
+body.flashcard-mode .app-shell {
+    padding-bottom: 8px;
+}
+
+/* study-page becomes a 3-row grid that fills the viewport:
+   row 1 = study-header, row 2 = toolbar (mode toggle), row 3 = flash panel */
+body.flashcard-mode .study-page {
+    height: calc(100dvh - 62px - 20px - 8px);
+    gap: 0;
+    grid-template-rows: auto auto 1fr;
+}
+
+body.flashcard-mode .study-header  { padding-bottom: 6px; }
+body.flashcard-mode .study-toolbar { padding-bottom: 6px; }
+
+/* The flash panel fills row 3 and lays itself out as a flex column */
+body.flashcard-mode #studyFlashPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Progress section: compact, fixed size */
+body.flashcard-mode .flash-progress-wrap {
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+body.flashcard-mode .flash-progress-header {
+    font-size: 0.78rem;
+}
+
+body.flashcard-mode .flash-stats {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+}
+
+/* The card scene grows to fill all leftover space */
+body.flashcard-mode .flashcard-scene {
+    flex: 1 1 0;
+    height: auto;        /* override the fixed 360px */
+    min-height: 180px;
+    max-height: none;
+}
+
+/* Action buttons: compact but still comfortably tappable */
+body.flashcard-mode .flash-actions {
+    flex-shrink: 0;
+    gap: 8px;
+}
+
+body.flashcard-mode .flash-action-btn {
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 0.86rem;
+}
+
+/* Shuffle: smallest of all — just text + icon, no tall box */
+body.flashcard-mode .study-flash-actions {
+    flex-shrink: 0;
+}
+
+body.flashcard-mode .study-flash-actions .secondary-button {
+    min-height: 34px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+}
+
+/* ── Responsive ── */
 @media (max-width: 640px) {
     .study-list-grid {
         grid-template-columns: 1fr;
     }
 
     .study-actions {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
     }
 
     .flashcard-scene {
-        height: 260px;
+        height: 300px;
     }
 
+    /* flash-actions always side by side, even on mobile */
     .flash-actions {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
     }
 
     .flash-action-btn {
-        min-height: 48px;
-        padding: 10px;
-        font-size: 0.85rem;
-    }
-
-    .summary-stats {
-        grid-template-columns: repeat(3, 1fr);
+        min-height: 46px;
+        padding: 10px 8px;
+        font-size: 0.82rem;
     }
 }
 

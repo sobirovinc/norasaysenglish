@@ -20,9 +20,9 @@
 >
     <header class="game-topbar">
         <a class="topbar-button icon-button back-link" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
-            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         </a>
         <a class="topbar-button icon-button" href="{% url 'vocabulary:home' %}" aria-label="Home">
             <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -37,8 +37,14 @@
             <div class="stat stat-lives" aria-label="Lives">
                 <span id="lives" class="lives-display"></span>
             </div>
-            <div class="stat stat-score"><span class="stat-label">Score</span> <span id="score">0</span></div>
-            <div class="stat stat-time"><span class="stat-label">Vaqt</span> <span id="time">60</span></div>
+            <div class="stat stat-score" aria-label="Score">
+                <i class="fa-solid fa-star stat-icon" aria-hidden="true"></i>
+                <span id="score">0</span>
+            </div>
+            <div class="stat stat-time" aria-label="Time">
+                <i class="fa-solid fa-clock stat-icon" aria-hidden="true"></i>
+                <span id="time">60</span>
+            </div>
         </div>
     </header>
 
@@ -151,6 +157,16 @@
             </div>
         </div>
     </div>
+    <!-- <nav class="study-actions" aria-label="Play games" id="studyGameLinks">
+        <a class="secondary-button" href="{% url 'vocabulary:unit_vocabulary' unit.id %}">
+            <span class="mode-icon" aria-hidden="true">📖</span>
+            Vocabulary List
+        </a>
+        <a class="secondary-button" href="{% url 'vocabulary:spelling' unit.id %}">
+            <span class="mode-icon" aria-hidden="true">⌨️</span>
+            Word Shooter
+        </a>
+    </nav> -->
 </section>
 {% endblock %}
 

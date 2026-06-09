@@ -1,373 +1,282 @@
 /**
- * Unit vocabulary study — list mode + flip flashcards with Know / Need Practice flow.
- * Includes:
- * - Working mode switching
- * - Working search
- * - Force reveal before grading
- * - Pagination (10 words/page)
- * - Swipe tutorial
- * - Safer initialization
+ * Unit vocabulary study — list + flashcards.
  */
-
 (function initStudyPage() {
+    'use strict';
+
     const root = document.getElementById('studyRoot');
     if (!root) return;
 
-    const MODE_KEY = 'nse-study-mode';
+    const MODE_KEY       = 'nse-study-mode';
     const DRAG_THRESHOLD = 90;
-    const WORDS_PER_PAGE = 10;
+    const PAGE_SIZE      = 12;   // 3-col grid → 12 is symmetric
 
+    // ── Word data ─────────────────────────────────────────────────────────────
     let allWords = [];
-
     try {
         allWords = JSON.parse(
             document.getElementById('studyWordsData')?.textContent || '[]'
         );
-    } catch (err) {
-        console.error('Failed to load study data', err);
-        allWords = [];
-    }
+    } catch (e) { allWords = []; }
 
+    // ── DOM ───────────────────────────────────────────────────────────────────
+    const el  = id => document.getElementById(id);
     const els = {
-        toolbar: document.getElementById('studyToolbar'),
-        search: document.getElementById('studySearch'),
-        modeButtons: root.querySelectorAll('[data-study-mode]'),
-        countLabel: document.getElementById('studyCountLabel'),
+        countLabel:       el('studyCountLabel'),
+        pageLabel:        el('studyPageLabel'),
+        toolbar:          el('studyToolbar'),
+        search:           el('studySearch'),
+        modeButtons:      root.querySelectorAll('[data-study-mode]'),
 
-        listPanel: document.getElementById('studyListPanel'),
-        listGrid: document.getElementById('studyListGrid'),
-        listCards: root.querySelectorAll('.vocab-card[data-word-id]'),
-        listEmpty: document.getElementById('studyListEmpty'),
+        listPanel:        el('studyListPanel'),
+        listGrid:         el('studyListGrid'),
+        listCards:        root.querySelectorAll('.vocab-card[data-word-id]'),
+        listEmpty:        el('studyListEmpty'),
+        pagination:       el('studyPagination'),
+        pagePrev:         el('pagePrev'),
+        pageNext:         el('pageNext'),
+        pageDots:         el('pageDots'),
 
-        flashPanel: document.getElementById('studyFlashPanel'),
-        cardContainer: document.getElementById('cardContainer'),
-        interactiveCard: document.getElementById('interactiveCard'),
-        cardFrontText: document.getElementById('cardFrontText'),
-        cardBackEnText: document.getElementById('cardBackEnText'),
-        cardAudioBtn: document.getElementById('cardAudioBtn'),
+        flashPanel:       el('studyFlashPanel'),
+        interactiveCard:  el('interactiveCard'),
+        cardFrontText:    el('cardFrontText'),
+        cardBackEnText:   el('cardBackEnText'),
+        cardAudioBtn:     el('cardAudioBtn'),
+        flashCounter:     el('flashCardCounter'),
+        flashPercent:     el('flashPercent'),
+        flashProgressBar: el('flashProgressBar'),
+        statKnown:        el('statKnownCount'),
+        statReview:       el('statReviewCount'),
+        flashActions:     el('flashActions'),
+        actionKnowBtn:    el('actionKnowBtn'),
+        actionReviewBtn:  el('actionReviewBtn'),
+        flashShuffle:     el('studyFlashShuffle'),
+        swipeHintLeft:    el('swipeHintLeft'),
+        swipeHintRight:   el('swipeHintRight'),
 
-        flashCounter: document.getElementById('flashCardCounter'),
-        flashPercent: document.getElementById('flashPercent'),
-        flashProgressBar: document.getElementById('flashProgressBar'),
+        summaryPanel:     el('studySummaryPanel'),
+        sumKnown:         el('sumKnown'),
+        sumReview:        el('sumReview'),
+        sumMastery:       el('sumMastery'),
+        btnRestart:       el('btnRestartSession'),
 
-        statKnown: document.getElementById('statKnownCount'),
-        statReview: document.getElementById('statReviewCount'),
-
-        flashActions: document.getElementById('flashActions'),
-        actionKnowBtn: document.getElementById('actionKnowBtn'),
-        actionReviewBtn: document.getElementById('actionReviewBtn'),
-        flashShuffle: document.getElementById('studyFlashShuffle'),
-
-        summaryPanel: document.getElementById('studySummaryPanel'),
-        sumKnown: document.getElementById('sumKnown'),
-        sumReview: document.getElementById('sumReview'),
-        sumMastery: document.getElementById('sumMastery'),
-        btnRestart: document.getElementById('btnRestartSession'),
-
-        gameLinks: document.getElementById('studyGameLinks'),
-
-        pageIndicator: document.getElementById('studyPageIndicator'),
-        pagePrev: document.getElementById('pagePrev'),
-        pageNext: document.getElementById('pageNext'),
-
-        tutorial: document.getElementById('flashcardTutorial'),
+        gameLinks:        el('studyGameLinks'),
+        muteBtn:          el('muteButton'),
     };
 
+    // ── State ─────────────────────────────────────────────────────────────────
     let filteredWords = [...allWords];
+    let activeMode    = sessionStorage.getItem(MODE_KEY) || 'list';
+    let currentPage   = 0;
+    let deck          = [];
+    let deckInitSize  = 0;
+    let knownCount    = 0;
+    let reviewCount   = 0;
+    let isFlipped     = false;
+    let isAnimating   = false;
+    let isMuted       = localStorage.getItem('nse-muted') === '1';
 
-    let deck = [];
-    let deckInitSize = 0;
+    // ── Mute ─────────────────────────────────────────────────────────────────
+    function applyMute() {
+        if (!els.muteBtn) return;
+        const iconOn  = els.muteBtn.querySelector('.icon-sound-on');
+        const iconOff = els.muteBtn.querySelector('.icon-sound-off');
+        if (iconOn)  iconOn.hidden  = isMuted;
+        if (iconOff) iconOff.hidden = !isMuted;
+        els.muteBtn.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
+    }
 
-    let knownCount = 0;
-    let reviewCount = 0;
+    els.muteBtn?.addEventListener('click', () => {
+        isMuted = !isMuted;
+        localStorage.setItem('nse-muted', isMuted ? '1' : '0');
+        applyMute();
+    });
 
-    let activeMode =
-        sessionStorage.getItem(MODE_KEY) || 'list';
+    applyMute();
 
-    let isFlipped = false;
-    let isAnimating = false;
+    function speak(word) {
+        if (!word || isMuted) return;
+        window.VocabSpeech?.speakEnglish(word);
+    }
 
-    let currentPage = 1;
-    let totalPages = 1;
-
+    // ── Helpers ───────────────────────────────────────────────────────────────
     function shuffle(arr) {
-        const copy = [...arr];
-
-        for (let i = copy.length - 1; i > 0; i--) {
+        for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [copy[i], copy[j]] = [copy[j], copy[i]];
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-
-        return copy;
+        return arr;
     }
 
+    function totalPages() {
+        return Math.max(1, Math.ceil(filteredWords.length / PAGE_SIZE));
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────────
     function filterWords() {
-        const q =
-            (els.search?.value || '')
-                .trim()
-                .toLowerCase();
-
+        const q = (els.search?.value || '').trim().toLowerCase();
         filteredWords = q
-            ? allWords.filter(word =>
-                  word.uzbek.toLowerCase().includes(q) ||
-                  word.english.toLowerCase().includes(q)
-              )
+            ? allWords.filter(w =>
+                w.uzbek.toLowerCase().includes(q) ||
+                w.english.toLowerCase().includes(q))
             : [...allWords];
-
-        currentPage = 1;
+        currentPage = 0;
     }
 
-    function updateCountLabel() {
-        if (!els.countLabel) return;
-
+    // ── Header meta ───────────────────────────────────────────────────────────
+    function updateHeaderMeta() {
         const total = allWords.length;
         const shown = filteredWords.length;
 
-        els.countLabel.textContent =
-            shown === total
-                ? `${total} Words`
+        if (els.countLabel) {
+            els.countLabel.textContent = shown === total
+                ? `${total} Word${total === 1 ? '' : 's'}`
                 : `${shown} of ${total} Words`;
+        }
+
+        if (activeMode === 'list') {
+            const tp = totalPages();
+            if (els.pageLabel) {
+                els.pageLabel.textContent = tp > 1 ? `${currentPage + 1} / ${tp}` : '';
+                els.pageLabel.hidden = tp <= 1;
+            }
+        } else {
+            if (els.pageLabel) els.pageLabel.hidden = true;
+        }
     }
 
+    // ── Mode switching ────────────────────────────────────────────────────────
     function setMode(mode) {
         activeMode = mode;
+        if (mode !== 'summary') sessionStorage.setItem(MODE_KEY, mode);
 
-        if (mode !== 'summary') {
-            sessionStorage.setItem(MODE_KEY, mode);
-        }
+        const isSummary = mode === 'summary';
+        const isFlash   = mode === 'flashcards';
 
-        if (els.toolbar) {
-            els.toolbar.hidden = mode === 'summary';
-        }
+        // Hide toolbar entirely in summary; hide search in flashcards
+        if (els.toolbar)   els.toolbar.hidden = isSummary;
+        if (els.search)    els.search.hidden  = isFlash || isSummary;
+        if (els.gameLinks) els.gameLinks.hidden = isSummary;
 
-        if (els.gameLinks) {
-            els.gameLinks.hidden = mode === 'summary';
-        }
+        // Toggle body class for flashcard lock-scroll
+        document.body.classList.toggle('flashcard-mode', isFlash);
 
-        if (els.listPanel) {
-            els.listPanel.hidden = mode !== 'list';
-        }
-
-        if (els.flashPanel) {
-            els.flashPanel.hidden = mode !== 'flashcards';
-        }
-
-        if (els.summaryPanel) {
-            els.summaryPanel.hidden = mode !== 'summary';
-        }
+        els.listPanel.hidden    = mode !== 'list';
+        els.flashPanel.hidden   = isFlash ? false : true;
+        els.summaryPanel.hidden = mode !== 'summary';
 
         els.modeButtons.forEach(btn => {
-            const active =
-                btn.dataset.studyMode === mode;
-
-            btn.classList.toggle(
-                'is-active',
-                active
-            );
-
-            btn.setAttribute(
-                'aria-selected',
-                active ? 'true' : 'false'
-            );
+            const active = btn.dataset.studyMode === mode;
+            btn.classList.toggle('is-active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
         });
 
-        if (mode === 'list') {
-            renderList();
-        }
+        if (mode === 'list')        { filterWords(); renderList(); }
+        else if (isFlash)           { initDeck(); }
+        else if (mode === 'summary') { renderSummary(); }
 
-        if (mode === 'flashcards') {
-            initDeck();
-            showSwipeTutorial();
-        }
-
-        if (mode === 'summary') {
-            renderSummary();
-        }
+        updateHeaderMeta();
     }
 
+    // ── List mode ─────────────────────────────────────────────────────────────
     function renderList() {
-        if (!els.listCards.length) return;
-
-        totalPages = Math.max(
-            1,
-            Math.ceil(
-                filteredWords.length / WORDS_PER_PAGE
-            )
-        );
-
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
-
-        const start =
-            (currentPage - 1) * WORDS_PER_PAGE;
-
-        const end = start + WORDS_PER_PAGE;
-
-        const visibleIds = new Set(
-            filteredWords
-                .slice(start, end)
-                .map(word => String(word.id))
+        const start   = currentPage * PAGE_SIZE;
+        const pageIds = new Set(
+            filteredWords.slice(start, start + PAGE_SIZE).map(w => String(w.id))
         );
 
         els.listCards.forEach(card => {
-            card.hidden =
-                !visibleIds.has(card.dataset.wordId);
+            card.hidden = !pageIds.has(card.dataset.wordId);
         });
 
-        if (els.listEmpty) {
-            els.listEmpty.hidden =
-                filteredWords.length > 0;
+        if (els.listEmpty) els.listEmpty.hidden = filteredWords.length > 0;
+
+        const tp = totalPages();
+        if (els.pagination) els.pagination.hidden = tp <= 1;
+        if (els.pagePrev)   els.pagePrev.disabled  = currentPage === 0;
+        if (els.pageNext)   els.pageNext.disabled  = currentPage >= tp - 1;
+
+        if (els.pageDots) {
+            els.pageDots.innerHTML = '';
+            for (let i = 0; i < tp; i++) {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = 'page-dot' + (i === currentPage ? ' is-active' : '');
+                dot.setAttribute('aria-label', `Page ${i + 1}`);
+                dot.dataset.page = i;
+                els.pageDots.appendChild(dot);
+            }
         }
 
-        if (els.pageIndicator) {
-            els.pageIndicator.textContent =
-                `${currentPage}/${totalPages}`;
-        }
-
-        updateCountLabel();
+        updateHeaderMeta();
     }
 
+    // ── Flashcard deck ────────────────────────────────────────────────────────
     function initDeck() {
-        deck = [...filteredWords];
-
+        deck         = [...filteredWords];
         deckInitSize = deck.length;
-
-        knownCount = 0;
-        reviewCount = 0;
-
-        isFlipped = false;
-        isAnimating = false;
+        knownCount   = 0;
+        reviewCount  = 0;
+        isFlipped    = false;
+        isAnimating  = false;
 
         updateMetrics();
-
-        if (!deck.length) {
-            showEmptyCard();
-            return;
-        }
-
+        if (!deck.length) { showEmptyCard(); return; }
         displayCard();
+        setTimeout(playSwipeHint, 700);
     }
 
     function displayCard() {
-        const word = deck[0];
-
-        if (!word) {
-            showEmptyCard();
-            return;
-        }
-
-        els.interactiveCard?.classList.remove(
-            'flipped',
-            'swipe-left',
-            'swipe-right'
-        );
-
+        const card = els.interactiveCard;
+        card.classList.remove('flipped', 'swipe-left', 'swipe-right');
+        card.style.transform  = '';
+        card.style.transition = '';
         isFlipped = false;
 
-        if (els.cardFrontText) {
-            els.cardFrontText.textContent =
-                word.uzbek;
-        }
-
-        if (els.cardBackEnText) {
-            els.cardBackEnText.textContent =
-                word.english;
-        }
-
-        if (els.flashActions) {
-            els.flashActions.hidden = false;
-        }
+        const word = deck[0];
+        if (!word) { showEmptyCard(); return; }
+        els.cardFrontText.textContent  = word.uzbek;
+        els.cardBackEnText.textContent = word.english;
+        if (els.flashActions) els.flashActions.hidden = false;
     }
 
     function showEmptyCard() {
-        if (els.cardFrontText) {
-            els.cardFrontText.textContent =
-                'No matching words';
-        }
-
-        if (els.cardBackEnText) {
-            els.cardBackEnText.textContent = '';
-        }
-
-        if (els.flashActions) {
-            els.flashActions.hidden = true;
-        }
+        els.cardFrontText.textContent  = 'No matches';
+        els.cardBackEnText.textContent = '';
+        if (els.flashActions)     els.flashActions.hidden = true;
+        if (els.flashCounter)     els.flashCounter.textContent = 'Card 0 of 0';
+        if (els.flashPercent)     els.flashPercent.textContent = '0%';
+        if (els.flashProgressBar) els.flashProgressBar.style.width = '0%';
     }
 
     function flipCard() {
         if (isAnimating) return;
-
         isFlipped = !isFlipped;
-
-        els.interactiveCard?.classList.toggle(
-            'flipped',
-            isFlipped
-        );
-
-        if (isFlipped) {
-            window.VocabSpeech?.speakEnglish(
-                deck[0]?.english
-            );
-        }
+        els.interactiveCard.classList.toggle('flipped', isFlipped);
+        if (isFlipped) speak(deck[0]?.english);
     }
 
     function updateMetrics() {
         const remaining = deck.length;
+        const pct = deckInitSize > 0
+            ? Math.min(Math.round((knownCount / deckInitSize) * 100), 100) : 0;
 
-        const progress =
-            deckInitSize > 0
-                ? Math.round(
-                      (knownCount /
-                          deckInitSize) *
-                          100
-                  )
-                : 0;
-
-        if (els.statKnown) {
-            els.statKnown.textContent =
-                knownCount;
-        }
-
-        if (els.statReview) {
-            els.statReview.textContent =
-                reviewCount;
-        }
-
-        if (els.flashCounter) {
-            els.flashCounter.textContent =
-                `Remaining: ${remaining} / ${deckInitSize}`;
-        }
-
-        if (els.flashPercent) {
-            els.flashPercent.textContent =
-                `${progress}%`;
-        }
-
-        if (els.flashProgressBar) {
-            els.flashProgressBar.style.width =
-                `${progress}%`;
-        }
+        if (els.statKnown)        els.statKnown.textContent        = knownCount;
+        if (els.statReview)       els.statReview.textContent       = reviewCount;
+        if (els.flashCounter)     els.flashCounter.textContent     = `Remaining: ${remaining} / ${deckInitSize}`;
+        if (els.flashPercent)     els.flashPercent.textContent     = `${pct}%`;
+        if (els.flashProgressBar) els.flashProgressBar.style.width = `${pct}%`;
     }
 
+    // ── Process Know / Review — NO forced flip, acts immediately ─────────────
     function processAction(direction) {
-        if (isAnimating) return;
-
-        if (!deck.length) return;
-
-        if (!isFlipped) {
-            flipCard();
-            return;
-        }
-
+        if (isAnimating || deck.length === 0) return;
         isAnimating = true;
+        hideOverlays();
 
-        const currentWord = deck[0];
-
-        els.interactiveCard?.classList.add(
-            direction === 'right'
-                ? 'swipe-right'
-                : 'swipe-left'
+        const word = deck[0];
+        els.interactiveCard.classList.add(
+            direction === 'right' ? 'swipe-right' : 'swipe-left'
         );
 
         if (direction === 'right') {
@@ -375,370 +284,195 @@
             deck.shift();
         } else {
             reviewCount++;
-
             deck.shift();
-
-            const reinsertIndex =
-                Math.min(3, deck.length);
-
-            deck.splice(
-                reinsertIndex,
-                0,
-                currentWord
-            );
+            deck.splice(Math.min(3, deck.length), 0, word);
         }
 
         updateMetrics();
 
         setTimeout(() => {
             isAnimating = false;
-
-            if (!deck.length) {
-                setMode('summary');
-                return;
-            }
-
-            displayCard();
+            deck.length === 0 ? setMode('summary') : displayCard();
         }, 380);
     }
 
+    // ── Summary ───────────────────────────────────────────────────────────────
     function renderSummary() {
-        if (els.sumKnown) {
-            els.sumKnown.textContent =
-                knownCount;
-        }
-
-        if (els.sumReview) {
-            els.sumReview.textContent =
-                reviewCount;
-        }
-
-        const score =
-            deckInitSize > 0
-                ? Math.round(
-                      (knownCount /
-                          deckInitSize) *
-                          100
-                  )
-                : 0;
-
-        if (els.sumMastery) {
-            els.sumMastery.textContent =
-                `${score}%`;
-        }
+        if (els.sumKnown)  els.sumKnown.textContent  = knownCount;
+        if (els.sumReview) els.sumReview.textContent = reviewCount;
+        const score = deckInitSize > 0
+            ? Math.round((knownCount / deckInitSize) * 100) : 0;
+        if (els.sumMastery) els.sumMastery.textContent = `${score}%`;
+        document.body.classList.remove('flashcard-mode');
     }
 
-    function showSwipeTutorial() {
-        if (!els.tutorial) return;
+    // ── Swipe hint animation ──────────────────────────────────────────────────
+    function playSwipeHint() {
+        if (sessionStorage.getItem('nse-swipe-hint') || deck.length === 0) return;
+        sessionStorage.setItem('nse-swipe-hint', '1');
 
-        if (
-            localStorage.getItem(
-                'nse-swipe-tutorial'
-            )
-        ) {
-            return;
-        }
+        const card = els.interactiveCard;
+        const HALF = 60;
+        const T    = 'transform 0.35s ease-in-out';
 
-        els.tutorial.classList.add('show');
+        // Double rAF so the browser has painted before we apply the transform
+        function step(fn) { requestAnimationFrame(() => requestAnimationFrame(fn)); }
 
+        // 1. Ensure we start at rest with no transition
+        card.style.transition = 'none';
+        card.style.transform  = 'translate3d(0,0,0) rotate(0deg)';
+
+        // 2. Drift left
+        step(() => {
+            card.style.transition = T;
+            card.style.transform  = `translate3d(-${HALF}px,0,0) rotate(-5deg)`;
+            showOverlay('left', 0.65);
+        });
+
+        // 3. Snap back to centre
         setTimeout(() => {
-            els.tutorial?.classList.remove(
-                'show'
-            );
+            step(() => {
+                card.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+                hideOverlays();
+            });
+        }, 480);
 
-            localStorage.setItem(
-                'nse-swipe-tutorial',
-                '1'
-            );
-        }, 4000);
+        // 4. Drift right
+        setTimeout(() => {
+            step(() => {
+                card.style.transform = `translate3d(${HALF}px,0,0) rotate(5deg)`;
+                showOverlay('right', 0.65);
+            });
+        }, 900);
+
+        // 5. Snap back and clean up
+        setTimeout(() => {
+            step(() => {
+                card.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+                hideOverlays();
+                setTimeout(() => {
+                    card.style.transition = '';
+                    card.style.transform  = '';
+                }, 400);
+            });
+        }, 1380);
     }
 
-    function setupSwipe() {
-        if (!els.interactiveCard) return;
+    function showOverlay(dir, opacity) {
+        if (dir === 'left'  && els.swipeHintLeft)  els.swipeHintLeft.style.opacity  = opacity;
+        if (dir === 'right' && els.swipeHintRight) els.swipeHintRight.style.opacity = opacity;
+    }
 
-        let startX = 0;
-        let startY = 0;
-        let moveX = 0;
-        let dragging = false;
+    function hideOverlays() {
+        if (els.swipeHintLeft)  els.swipeHintLeft.style.opacity  = '0';
+        if (els.swipeHintRight) els.swipeHintRight.style.opacity = '0';
+    }
+
+    // ── Drag / swipe ──────────────────────────────────────────────────────────
+    function setupSwipe() {
+        let startX = 0, startY = 0, moveX = 0, dragging = false;
 
         function onStart(x, y) {
             if (isAnimating) return;
-
-            startX = x;
-            startY = y;
-
-            moveX = 0;
-            dragging = true;
-
-            els.interactiveCard.style.transition =
-                'none';
+            startX = x; startY = y; moveX = 0; dragging = true;
+            els.interactiveCard.style.transition = 'none';
         }
 
         function onMove(x, y) {
-            if (!dragging) return;
-
+            if (!dragging || isAnimating) return;
             moveX = x - startX;
-
-            const moveY = y - startY;
-
-            if (
-                Math.abs(moveX) >
-                Math.abs(moveY)
-            ) {
-                const rotate =
-                    moveX * 0.08;
-
-                const flip =
-                    isFlipped
-                        ? ' rotateY(180deg)'
-                        : '';
-
+            const dy = y - startY;
+            if (Math.abs(moveX) > Math.abs(dy)) {
+                const rot        = moveX * 0.08;
+                const flipSuffix = isFlipped ? ' rotateY(180deg)' : '';
                 els.interactiveCard.style.transform =
-                    `translate3d(${moveX}px,0,0) rotate(${rotate}deg)${flip}`;
+                    `translate3d(${moveX}px,0,0) rotate(${rot}deg)${flipSuffix}`;
+                const pct = Math.min(Math.abs(moveX) / DRAG_THRESHOLD, 1);
+                if (moveX < 0) { showOverlay('left',  pct * 0.9); showOverlay('right', 0); }
+                else            { showOverlay('right', pct * 0.9); showOverlay('left',  0); }
             }
         }
 
         function onEnd() {
             if (!dragging) return;
-
             dragging = false;
+            els.interactiveCard.style.transition = '';
+            els.interactiveCard.style.transform  = '';
+            hideOverlays();
 
-            els.interactiveCard.style.transition =
-                '';
-
-            els.interactiveCard.style.transform =
-                '';
-
-            if (moveX > DRAG_THRESHOLD) {
-                processAction('right');
-            } else if (
-                moveX < -DRAG_THRESHOLD
-            ) {
-                processAction('left');
-            }
-
+            if      (moveX >  DRAG_THRESHOLD) processAction('right');
+            else if (moveX < -DRAG_THRESHOLD) processAction('left');
             moveX = 0;
         }
 
-        els.interactiveCard.addEventListener(
-            'touchstart',
-            e =>
-                onStart(
-                    e.touches[0].clientX,
-                    e.touches[0].clientY
-                ),
-            { passive: true }
-        );
-
-        els.interactiveCard.addEventListener(
-            'touchmove',
-            e =>
-                onMove(
-                    e.touches[0].clientX,
-                    e.touches[0].clientY
-                ),
-            { passive: true }
-        );
-
-        els.interactiveCard.addEventListener(
-            'touchend',
-            onEnd
-        );
-
-        els.interactiveCard.addEventListener(
-            'mousedown',
-            e => {
-                if (
-                    e.target.closest(
-                        '#cardAudioBtn'
-                    )
-                ) {
-                    return;
-                }
-
-                onStart(
-                    e.clientX,
-                    e.clientY
-                );
-            }
-        );
-
-        window.addEventListener(
-            'mousemove',
-            e =>
-                onMove(
-                    e.clientX,
-                    e.clientY
-                )
-        );
-
-        window.addEventListener(
-            'mouseup',
-            onEnd
-        );
+        const c = els.interactiveCard;
+        c.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        c.addEventListener('touchmove',  e => onMove(e.touches[0].clientX,  e.touches[0].clientY), { passive: true });
+        c.addEventListener('touchend',   onEnd);
+        c.addEventListener('mousedown',  e => { if (!e.target.closest('#cardAudioBtn')) onStart(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', onEnd);
     }
 
+    // ── Keyboard ──────────────────────────────────────────────────────────────
     function setupKeyboard() {
-        document.addEventListener(
-            'keydown',
-            e => {
-                if (
-                    activeMode !==
-                    'flashcards'
-                ) {
-                    return;
-                }
-
-                if (
-                    e.target.matches(
-                        'input, textarea, select'
-                    )
-                ) {
-                    return;
-                }
-
-                if (
-                    e.key === ' ' ||
-                    e.key === 'Enter'
-                ) {
-                    e.preventDefault();
-                    flipCard();
-                }
-
-                if (
-                    e.key === 'ArrowRight'
-                ) {
-                    e.preventDefault();
-                    processAction('right');
-                }
-
-                if (
-                    e.key === 'ArrowLeft'
-                ) {
-                    e.preventDefault();
-                    processAction('left');
-                }
-            }
-        );
+        document.addEventListener('keydown', e => {
+            if (activeMode !== 'flashcards') return;
+            if (e.target.matches('input, textarea, select')) return;
+            if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); processAction('right'); }
+            else if (e.key === 'ArrowLeft')  { e.preventDefault(); processAction('left'); }
+        });
     }
 
-    els.modeButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            setMode(btn.dataset.studyMode);
-        });
+    // ── Events ────────────────────────────────────────────────────────────────
+    els.modeButtons.forEach(btn =>
+        btn.addEventListener('click', () => setMode(btn.dataset.studyMode))
+    );
+
+    els.search?.addEventListener('input', () => {
+        filterWords();
+        if (activeMode === 'list') renderList();
+        else if (activeMode === 'flashcards') initDeck();
+        updateHeaderMeta();
     });
 
-    els.search?.addEventListener(
-        'input',
-        () => {
-            filterWords();
+    els.pagePrev?.addEventListener('click', () => {
+        if (currentPage > 0) { currentPage--; renderList(); }
+    });
+    els.pageNext?.addEventListener('click', () => {
+        if (currentPage < totalPages() - 1) { currentPage++; renderList(); }
+    });
+    els.pageDots?.addEventListener('click', e => {
+        const dot = e.target.closest('.page-dot');
+        if (dot) { currentPage = parseInt(dot.dataset.page, 10); renderList(); }
+    });
 
-            if (activeMode === 'list') {
-                renderList();
-            } else if (
-                activeMode ===
-                'flashcards'
-            ) {
-                initDeck();
-            }
-        }
-    );
-
-    root
-        .querySelectorAll('[data-speak-word]')
-        .forEach(btn => {
-            btn.addEventListener(
-                'click',
-                e => {
-                    e.stopPropagation();
-
-                    window.VocabSpeech?.speakEnglish(
-                        btn.dataset
-                            .speakWord
-                    );
-                }
-            );
-        });
-
-    els.interactiveCard?.addEventListener(
-        'click',
-        e => {
-            if (
-                e.target.closest(
-                    '#cardAudioBtn'
-                )
-            ) {
-                return;
-            }
-
-            flipCard();
-        }
-    );
-
-    els.cardAudioBtn?.addEventListener(
-        'click',
-        e => {
+    root.querySelectorAll('[data-speak-word]').forEach(btn =>
+        btn.addEventListener('click', e => {
             e.stopPropagation();
-
-            window.VocabSpeech?.speakEnglish(
-                deck[0]?.english
-            );
-        }
+            speak(btn.dataset.speakWord);
+        })
     );
 
-    els.actionKnowBtn?.addEventListener(
-        'click',
-        () => processAction('right')
-    );
+    els.interactiveCard?.addEventListener('click', e => {
+        if (e.target.closest('#cardAudioBtn')) return;
+        if (!isAnimating) flipCard();
+    });
 
-    els.actionReviewBtn?.addEventListener(
-        'click',
-        () => processAction('left')
-    );
+    els.cardAudioBtn?.addEventListener('click', e => {
+        e.stopPropagation();
+        speak(deck[0]?.english);
+    });
 
-    els.flashShuffle?.addEventListener(
-        'click',
-        () => {
-            filteredWords =
-                shuffle(filteredWords);
-
-            initDeck();
-        }
-    );
-
-    els.btnRestart?.addEventListener(
-        'click',
-        () => {
-            setMode('flashcards');
-        }
-    );
-
-    els.pagePrev?.addEventListener(
-        'click',
-        () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderList();
-            }
-        }
-    );
-
-    els.pageNext?.addEventListener(
-        'click',
-        () => {
-            if (
-                currentPage <
-                totalPages
-            ) {
-                currentPage++;
-                renderList();
-            }
-        }
-    );
+    els.actionKnowBtn?.addEventListener('click',   () => processAction('right'));
+    els.actionReviewBtn?.addEventListener('click', () => processAction('left'));
+    els.flashShuffle?.addEventListener('click', () => { shuffle(filteredWords); initDeck(); });
+    els.btnRestart?.addEventListener('click', () => setMode('flashcards'));
 
     setupSwipe();
     setupKeyboard();
 
-    filterWords();
+    // ── Boot ──────────────────────────────────────────────────────────────────
     setMode(activeMode);
 })();
