@@ -23,7 +23,7 @@
                 <div class="container-fluid">
                     <!-- <div class="site-header-inner"> -->
                         <a class="site-brand" href="{% url 'vocabulary:home' %}">
-                            <img src="{% if teacher.photo %}{{ teacher.photo.url }}{% else %}{% static 'vocabulary/images/logo.jpg' %}{% endif %}" alt="{{ teacher.name }} logo">
+                            <img src="{% static 'vocabulary/images/logo.jpg' %}" alt="{{ teacher.name }} logo">
                             <span>Nora says English</span>
                         </a> 
                         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
