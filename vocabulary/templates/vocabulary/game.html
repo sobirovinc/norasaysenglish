@@ -46,6 +46,22 @@
                 <span id="time">60</span>
             </div>
         </div>
+        <div class="game-status">
+        <div class="game-title">
+            <p class="eyebrow">{{ unit.level.name }}</p>
+            <h1>{{ unit.title }}</h1>
+        </div>
+        <div class="unit-progress" aria-label="Unit Progress">
+            <div class="progress-copy">
+                <span>Progress</span>
+                <strong id="roundLabel">Round 1 / 1</strong>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
     </header>
 
     <div class="game-status">
@@ -157,16 +173,6 @@
             </div>
         </div>
     </div>
-    <nav class="study-actions" aria-label="Play games" id="studyGameLinks">
-        <a class="secondary-button" href="{% url 'vocabulary:unit_vocabulary' unit.id %}">
-            <span class="mode-icon" aria-hidden="true">📖</span>
-            Vocabulary List
-        </a>
-        <a class="secondary-button" href="{% url 'vocabulary:spelling' unit.id %}">
-            <span class="mode-icon" aria-hidden="true">⌨️</span>
-            Word Shooter
-        </a>
-    </nav>
 </section>
 {% endblock %}
 
