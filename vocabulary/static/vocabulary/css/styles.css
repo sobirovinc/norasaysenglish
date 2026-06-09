@@ -690,7 +690,10 @@ body.game-page.modal-open {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
     gap: 8px;
     align-items: end;
-    width: 100%;
+
+    width: calc(100% * 8 / 12);
+    max-width: 100%;
+    margin-inline: auto;
 }
 
 .game-title h1 {
