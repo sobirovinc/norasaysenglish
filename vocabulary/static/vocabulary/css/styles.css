@@ -95,6 +95,21 @@ img {
     object-fit: cover;
 }
 
+.site-header .container-fluid {
+    width: 83.333333%;   /* 10/12 */
+    margin: 0 auto;
+    padding: 0;
+}
+
+.navbar-collapse {
+    justify-content: flex-end;
+}
+
+.navbar-nav {
+    margin-left: auto;
+    gap: 8px;
+}
+
 .site-nav,
 .footer-nav {
     display: flex;
@@ -691,8 +706,7 @@ body.game-page.modal-open {
     gap: 8px;
     align-items: end;
 
-    width: calc(100% * 8 / 12);
-    max-width: 100%;
+    width: 66.666667%;
     margin-inline: auto;
 }
 
@@ -1189,7 +1203,7 @@ body.game-page.modal-open {
 }
 
 .mode-card--study {
-    grid-column: 1 / -1;
+    grid-column: auto;
 }
 
 .mode-card {
