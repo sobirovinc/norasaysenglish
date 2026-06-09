@@ -33,10 +33,12 @@ SECRET_KEY = os.getenv(
 
 DEBUG = env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = env_list(
-    'DJANGO_ALLOWED_HOSTS',
-    'norasaysenglish.uz,www.norasaysenglish.uz'
-)
+ALLOWED_HOSTS = ['*']
+
+# ALLOWED_HOSTS = env_list(
+#     'DJANGO_ALLOWED_HOSTS',
+#     'norasaysenglish.uz,www.norasaysenglish.uz'
+# )
 
 CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
 

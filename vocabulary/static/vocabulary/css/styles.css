@@ -1194,7 +1194,7 @@ body.game-page.modal-open {
 }
 
 /* Unit mode hub */
-.unit-hub .mode-grid {
+/* .unit-hub .mode-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
@@ -1204,6 +1204,15 @@ body.game-page.modal-open {
 
 .mode-card--study {
     grid-column: auto;
+} */
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.mode-card--study {
+    grid-column: 1 / -1; /* span the entire row */
 }
 
 .mode-card {
