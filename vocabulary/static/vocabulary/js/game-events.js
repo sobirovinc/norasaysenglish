@@ -1,5 +1,7 @@
 /**
- * Loads CMS-driven game events and plays optional sound/GIF assets with safe fallbacks.
+ * Loads CMS-driven game events and plays optional sound/GIF assets.
+ * Uses Web Audio API with preloaded buffers so sounds play instantly
+ * on first trigger rather than waiting for a network fetch.
  */
 class GameEventPresenter {
     constructor() {
@@ -10,10 +12,13 @@ class GameEventPresenter {
             round_pause_ms: 2200,
         };
         this.muted = false;
-        this.activeAudio = null;
-        this.sharedAudio = null;
         this.audioUnlocked = false;
         this.muteStorageKey = 'nse-game-muted';
+
+        // Web Audio API
+        this.ctx = null;
+        this.buffers = {};   // sound_url → AudioBuffer
+        this.activeNodes = [];
     }
 
     isPageVisible() {
@@ -24,11 +29,21 @@ class GameEventPresenter {
         return !this.muted && this.isPageVisible();
     }
 
+    // ── AudioContext ──────────────────────────────────────────────────────────
+    _getCtx() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+        return this.ctx;
+    }
+
+    // ── Load & preload ────────────────────────────────────────────────────────
     async loadEvents() {
         const response = await fetch('/api/game-events/');
-        if (!response.ok) {
-            throw new Error('Failed to load game events.');
-        }
+        if (!response.ok) throw new Error('Failed to load game events.');
 
         const payload = await response.json();
         this.events = payload.events || payload;
@@ -37,8 +52,43 @@ class GameEventPresenter {
         }
 
         this.muted = localStorage.getItem(this.muteStorageKey) === 'true';
+
+        // Kick off background preload of all event sounds immediately.
+        // By the time the player makes their first move, buffers are ready.
+        this._preloadAllSounds();
     }
 
+    _preloadAllSounds() {
+        // Create a temporary ctx for decoding (may be suspended before user gesture,
+        // but decodeAudioData works regardless of ctx state).
+        if (!this.ctx) {
+            try {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (_) { return; }
+        }
+
+        const seen = new Set();
+        for (const event of Object.values(this.events)) {
+            if (event.sound_url && !seen.has(event.sound_url)) {
+                seen.add(event.sound_url);
+                this._preloadBuffer(event.sound_url);
+            }
+        }
+    }
+
+    async _preloadBuffer(url) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) return;
+            const arrayBuf = await res.arrayBuffer();
+            const audioBuf = await this.ctx.decodeAudioData(arrayBuf);
+            this.buffers[url] = audioBuf;
+        } catch (_) {
+            // Silently ignore missing/corrupt audio
+        }
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────────
     getEvent(eventType) {
         return this.events[eventType] || null;
     }
@@ -46,102 +96,89 @@ class GameEventPresenter {
     setMuted(isMuted) {
         this.muted = isMuted;
         localStorage.setItem(this.muteStorageKey, String(isMuted));
-        if (isMuted) {
-            this.stopSound();
-        }
+        if (isMuted) this.stopSound();
     }
 
     isMuted() {
         return this.muted;
     }
 
+    unlockAudio() {
+        if (this.audioUnlocked) return;
+        this.audioUnlocked = true;
+        this._getCtx();   // resume context on first user gesture
+    }
+
     /** Show title/message and attempt optional media for a game event. */
     showGameEvent(eventType, { titleEl, messageEl, gifEl, bannerEl, skipSound = false } = {}) {
         const event = this.getEvent(eventType);
-        if (!event) {
-            return { title: '', message: '' };
-        }
+        if (!event) return { title: '', message: '' };
 
-        const title = event.title || '';
+        const title   = event.title   || '';
         const message = event.message || '';
 
-        if (titleEl) {
-            titleEl.textContent = title;
-        }
-        if (messageEl) {
-            messageEl.textContent = message;
-        }
+        if (titleEl)   titleEl.textContent   = title;
+        if (messageEl) messageEl.textContent = message;
+
         if (bannerEl) {
             const hasContent = Boolean(title || message);
             bannerEl.classList.toggle('is-empty', !hasContent);
             const heading = bannerEl.querySelector('[data-event-title]');
-            const body = bannerEl.querySelector('[data-event-message]');
-            if (heading) {
-                heading.textContent = title;
-            }
-            if (body) {
-                body.textContent = message;
-            }
+            const body    = bannerEl.querySelector('[data-event-message]');
+            if (heading) heading.textContent = title;
+            if (body)    body.textContent    = message;
         }
 
         this.playEventSound(eventType, { skipSound });
-        if (gifEl) {
-            this.showEventGif(gifEl, eventType);
-        }
+        if (gifEl) this.showEventGif(gifEl, eventType);
 
         return { title, message };
     }
 
-    unlockAudio() {
-        if (this.audioUnlocked) {
-            return;
-        }
+    playEventSound(eventType, { skipSound = false } = {}) {
+        if (skipSound || !this.isAudible() || !this.audioUnlocked) return;
 
-        this.audioUnlocked = true;
-        if (!this.sharedAudio) {
-            this.sharedAudio = new Audio();
+        const event = this.getEvent(eventType);
+        if (!event || !event.sound_url) return;
+
+        const url = event.sound_url;
+        const buf = this.buffers[url];
+
+        if (buf && this.ctx) {
+            // Buffer is ready → play instantly via Web Audio
+            this._playBuffer(buf);
+        } else {
+            // Buffer still loading (very first play, slow connection) → HTML Audio fallback
+            this._playFallback(url);
         }
     }
 
-    playEventSound(eventType, { skipSound = false } = {}) {
-        if (skipSound || !this.isAudible()) {
-            return;
-        }
+    _playBuffer(buf) {
+        const ctx = this._getCtx();
+        const source = ctx.createBufferSource();
+        source.buffer = buf;
+        source.connect(ctx.destination);
 
-        const event = this.getEvent(eventType);
-        if (!event || !event.sound_url) {
-            return;
-        }
-
-        if (!this.sharedAudio) {
-            this.sharedAudio = new Audio();
-        }
-
-        const audio = this.sharedAudio;
-        audio.pause();
-        audio.src = event.sound_url;
-        audio.currentTime = 0;
-        audio.onerror = () => {
-            this.activeAudio = null;
+        this.activeNodes.push(source);
+        source.onended = () => {
+            this.activeNodes = this.activeNodes.filter(n => n !== source);
         };
-        this.activeAudio = audio;
-        audio.play().catch(() => {
-            this.activeAudio = null;
-        });
+        source.start(0);
+    }
+
+    _playFallback(url) {
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
     }
 
     showEventGif(container, eventType) {
-        if (!container) {
-            return;
-        }
+        if (!container) return;
 
         const event = this.getEvent(eventType);
         container.hidden = true;
         container.removeAttribute('src');
 
-        if (!event || !event.gif_url) {
-            return;
-        }
+        if (!event || !event.gif_url) return;
 
         container.onerror = () => {
             container.hidden = true;
@@ -154,11 +191,10 @@ class GameEventPresenter {
     }
 
     stopSound() {
-        if (this.sharedAudio) {
-            this.sharedAudio.pause();
-            this.sharedAudio.currentTime = 0;
-        }
-        this.activeAudio = null;
+        this.activeNodes.forEach(source => {
+            try { source.stop(); } catch (_) {}
+        });
+        this.activeNodes = [];
     }
 
     stopAllAudio() {

@@ -157,7 +157,7 @@
             </div>
         </div>
     </div>
-    <!-- <nav class="study-actions" aria-label="Play games" id="studyGameLinks">
+    <nav class="study-actions" aria-label="Play games" id="studyGameLinks">
         <a class="secondary-button" href="{% url 'vocabulary:unit_vocabulary' unit.id %}">
             <span class="mode-icon" aria-hidden="true">📖</span>
             Vocabulary List
@@ -166,7 +166,7 @@
             <span class="mode-icon" aria-hidden="true">⌨️</span>
             Word Shooter
         </a>
-    </nav> -->
+    </nav>
 </section>
 {% endblock %}
 
@@ -174,4 +174,5 @@
 <script src="{% static 'vocabulary/js/game-events.js' %}" defer></script>
 <script src="{% static 'vocabulary/js/game-logic.js' %}" defer></script>
 <script src="{% static 'vocabulary/js/game-ui.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/sounds.js' %}" defer></script>
 {% endblock %}

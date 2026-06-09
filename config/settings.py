@@ -33,11 +33,10 @@ SECRET_KEY = os.getenv(
 
 DEBUG = env_bool('DJANGO_DEBUG', False)
 
-ALLOWED_HOSTS = ['*']
-# ALLOWED_HOSTS = env_list(
-#     'DJANGO_ALLOWED_HOSTS',
-#     'norasaysenglish.uz,www.norasaysenglish.uz'
-# )
+ALLOWED_HOSTS = env_list(
+    'DJANGO_ALLOWED_HOSTS',
+    'norasaysenglish.uz,www.norasaysenglish.uz'
+)
 
 CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
 
@@ -113,7 +112,7 @@ TIME_ZONE = 'Asia/Tashkent'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STORAGES = {
     'default': {
@@ -124,7 +123,7 @@ STORAGES = {
     },
 }
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

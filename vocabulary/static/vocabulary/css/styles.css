@@ -620,15 +620,18 @@ body.game-page.modal-open {
 
 .game-topbar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 6px;
     margin-bottom: 14px;
+    max-width: 920px;
+    margin-inline: auto;
+    width: 100%;
 }
 
 .game-hud-stats {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     margin-left: auto;
 }
@@ -643,6 +646,14 @@ body.game-page.modal-open {
     border-radius: var(--radius-sm);
     background: var(--surface);
     font-weight: 800;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+.stat-icon {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1;
+    display: none;
 }
 
 .stat-label {
@@ -652,7 +663,6 @@ body.game-page.modal-open {
 }
 
 .stat-lives {
-    min-width: 72px;
     justify-content: center;
 }
 
@@ -664,6 +674,7 @@ body.game-page.modal-open {
 .life-icon {
     font-size: 1rem;
     line-height: 1;
+    transition: color 0.2s ease
 }
 
 .life-icon.is-full {
@@ -671,7 +682,7 @@ body.game-page.modal-open {
 }
 
 .life-icon.is-empty {
-    color: #ced4da;
+    color: #707172;
 }
 
 .game-status {
@@ -1061,7 +1072,29 @@ body.game-page.modal-open {
 
     .game-topbar {
         gap: 4px;
-        margin-bottom: 14px;
+        margin-bottom: 10px;
+        padding: 0;
+    }
+
+    .stat {
+        padding: 5px 8px;
+        min-height: 36px;
+        font-size: 0.88rem;
+        gap: 4px;
+    }
+
+    .stat-label { display: none; }
+    .stat-icon  { display: inline-block; }
+
+    .topbar-button {
+        min-height: 36px;
+        min-width: 36px;
+        padding: 7px;
+    }
+
+    .topbar-icon {
+        width: 18px;
+        height: 18px;
     }
 
     .game-board-zone {
