@@ -19,6 +19,7 @@
     data-sound-word-fall="{% static 'vocabulary/audio/shooter/word_falls.mp3' %}"
     data-sound-wrong="{% static 'vocabulary/audio/shooter/wrong_character.mp3' %}"
     data-sound-game-over="{% static 'vocabulary/audio/shooter/game_over.mp3' %}"
+    data-next-unit-url="{% if next_unit %}{% url 'vocabulary:unit_intro' next_unit.id %}{% endif %}"
 >
     <header class="shooter-topbar">
         <a class="topbar-button icon-button" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
@@ -31,6 +32,11 @@
             <strong>{{ unit.title }}</strong>
         </div>
         <a class="topbar-button" href="{% url 'vocabulary:home' %}">Home</a>
+        <button id="shooterPauseBtnDesktop" class="shooter-pause-btn topbar-button" type="button" aria-label="Pause menu" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path d="M5 6h3v12H5zm11 0h3v12h-3z" fill="currentColor"/>
+        </svg>
+        </button>
         <button id="shooterMuteBtn" class="topbar-button icon-button mute-toggle-btn" type="button" aria-label="Mute sound" aria-pressed="false">
             <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
             <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
@@ -75,7 +81,7 @@
         <div class="shooter-pause-card">
             <h2 id="shooterPauseTitle">Paused</h2>
             <p class="shooter-pause-unit">{{ unit.title }}</p>
-            <div class="modal-actions">
+            <div class="modal-actions modal-actions--three">
                 <button id="shooterResumeBtn" class="primary-button" type="button">Resume</button>
                 <a class="secondary-button" href="{% url 'vocabulary:unit_intro' unit.id %}">Back to Unit</a>
                 <a class="secondary-button" href="{% url 'vocabulary:home' %}">Home</a>
@@ -88,13 +94,37 @@
             <h2 id="shooterOverlayTitle">Game Over</h2>
             <p id="shooterOverlayMessage"></p>
             <p class="shooter-overlay-score">Score: <span id="shooterOverlayScore">0</span></p>
-            <div class="modal-actions">
+            <div class="modal-actions modal-actions--three">
                 <button id="shooterContinueBtn" class="primary-button" type="button">Continue (−50)</button>
                 <button id="shooterRestartBtn" class="secondary-button" type="button">Play Again</button>
                 <a class="secondary-button" href="{% url 'vocabulary:unit_intro' unit.id %}">Back to Unit</a>
                 <a class="secondary-button" href="{% url 'vocabulary:home' %}">Home</a>
             </div>
             <p id="shooterContinueHint" class="continue-hint" hidden>You need 50 points to continue.</p>
+        </div>
+    </div>
+
+    {# Victory modal — reuses the same game-modal pattern as the matching game #}
+    <div id="shooterVictoryModal" class="game-modal" hidden role="dialog" aria-modal="true" aria-labelledby="shooterVictoryTitle">
+        <div class="game-modal-card game-modal-card--victory">
+            <img id="shooterVictoryGif" class="event-gif" alt="" hidden>
+            <div id="shooterVictoryStars" class="victory-stars" aria-label="Stars earned"></div>
+            <h2 id="shooterVictoryTitle" class="game-modal-title">Unit Complete!</h2>
+            <p id="shooterVictoryMessage" class="game-modal-message">You spelled every word!</p>
+            <p id="shooterVictoryScore" class="modal-score-big">0</p>
+            <dl class="stats-grid stats-grid--compact">
+                <div><dt>Words</dt><dd id="shooterVictoryWords">0</dd></div>
+                <div><dt>Mistakes</dt><dd id="shooterVictoryMistakes">0</dd></div>
+            </dl>
+            <div class="modal-actions modal-actions--three">
+                <button id="shooterVictoryReplay" class="secondary-button" type="button">Play Again</button>
+                <a id="shooterVictoryHome" class="secondary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
+                {% if next_unit %}
+                    <a id="shooterVictoryNext" class="primary-button" href="{% url 'vocabulary:unit_intro' next_unit.id %}">Next Unit</a>
+                {% else %}
+                    <a id="shooterVictoryNext" class="primary-button" href="{% url 'vocabulary:home' %}">Return Home</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
@@ -111,5 +141,4 @@
 <script src="{% static 'vocabulary/js/shooter/Enemy.js' %}" defer></script>
 <script src="{% static 'vocabulary/js/shooter/GameScene.js' %}" defer></script>
 <script src="{% static 'vocabulary/js/shooter/main.js' %}" defer></script>
-<script src="{% static 'vocabulary/js/sounds.js' %}" defer></script>
 {% endblock %}

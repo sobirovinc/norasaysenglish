@@ -18,8 +18,8 @@ class WordManager {
         return this.completedIds.size >= this.allWords.length;
     }
 
-    markCompleted(word) {
-        this.completedIds.add(word.id);
+    markCompleted(wordId) {
+        this.completedIds.add(wordId);
     }
 
     getActiveFirstLetters(activeEnemies) {

@@ -183,6 +183,10 @@
         setPauseMenuOpen(true);
     });
 
+    document.getElementById('shooterPauseBtnDesktop')?.addEventListener('click', () => {
+        setPauseMenuOpen(true);
+    });
+
     document.getElementById('shooterResumeBtn')?.addEventListener('click', () => {
         setPauseMenuOpen(false);
     });

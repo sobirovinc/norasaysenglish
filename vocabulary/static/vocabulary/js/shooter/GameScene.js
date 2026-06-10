@@ -318,7 +318,45 @@ class GameScene extends Phaser.Scene {
     triggerVictory() {
         this.hasWon = true;
         this.isPaused = true;
-        this.showOverlay('victory');
+        ShooterAudio.play('gameOver');  // reuse — swap for a win sound if you add one
+        this.showVictoryModal();
+    }
+
+    showVictoryModal() {
+        const modal = document.getElementById('shooterVictoryModal');
+        if (!modal) { this.showOverlay('victory'); return; }
+
+        const sm = this.scoreManager;
+
+        // Populate stats
+        const scoreEl    = document.getElementById('shooterVictoryScore');
+        const wordsEl    = document.getElementById('shooterVictoryWords');
+        const mistakesEl = document.getElementById('shooterVictoryMistakes');
+        const starsEl    = document.getElementById('shooterVictoryStars');
+
+        if (scoreEl)    scoreEl.textContent    = sm.score;
+        if (wordsEl)    wordsEl.textContent     = sm.wordsDestroyed;
+        if (mistakesEl) mistakesEl.textContent  = sm.mistakes;
+
+        // Stars: 3 = no mistakes, 2 = ≤3 mistakes, 1 = more
+        if (starsEl) {
+            const earned = sm.mistakes === 0 ? 3 : sm.mistakes <= 3 ? 2 : 1;
+            starsEl.innerHTML = [1,2,3].map(n =>
+                `<span class="star ${n <= earned ? 'is-earned' : ''}">★</span>`
+            ).join('');
+        }
+
+        // Replay button
+        const replayBtn = document.getElementById('shooterVictoryReplay');
+        if (replayBtn) {
+            replayBtn.onclick = () => {
+                modal.hidden = true;
+                this.restartGame();
+            };
+        }
+
+        this.setChromeVisible(false);
+        modal.hidden = false;
     }
 
     flashHint(message) {

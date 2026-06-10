@@ -63,7 +63,15 @@ def game(request, unit_id):
 
 def spelling_game(request, unit_id):
     unit = get_object_or_404(Unit.objects.select_related('level'), pk=unit_id)
-    return render(request, 'vocabulary/spelling.html', {'unit': unit})
+    next_unit = (
+        Unit.objects.filter(level=unit.level, order__gt=unit.order)
+        .order_by('order')
+        .first()
+    )
+    return render(request, 'vocabulary/spelling.html', {
+        'unit': unit,
+        'next_unit': next_unit,
+    })
 
 
 def unit_vocabulary(request, unit_id):
