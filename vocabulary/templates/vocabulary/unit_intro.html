@@ -21,9 +21,15 @@
             <dt>Words</dt>
             <dd>{{ word_count }}</dd>
         </div>
+        {% if sentence_count %}
+        <div>
+            <dt>Sentences</dt>
+            <dd>{{ sentence_count }}</dd>
+        </div>
+        {% endif %}
         <div>
             <dt>Modes</dt>
-            <dd>3</dd>
+            <dd>{% if sentence_count %}4{% else %}3{% endif %}</dd>
         </div>
         <div>
             <dt>Est. time</dt>
@@ -34,8 +40,9 @@
     <p class="intro-copy">Choose how you want to practice this unit.</p>
     <p class="intro-copy intro-copy-uz">Bu darsni qanday mashq qilishni tanlang.</p>
 
-    {% if word_count %}
+    {% if word_count or sentence_count %}
         <div class="mode-grid">
+            {% if word_count %}
             <a class="mode-card mode-card--study" href="{% url 'vocabulary:unit_vocabulary' unit.id %}">
                 <span class="mode-icon" aria-hidden="true">📖</span>
                 <strong>Study Vocabulary</strong>
@@ -54,10 +61,19 @@
                 <span>Type the English spelling as words fall down the screen.</span>
                 <span class="mode-tag">Spelling</span>
             </a>
+            {% endif %}
+            {% if sentence_count %}
+            <a class="mode-card mode-card--wordorder" href="{% url 'vocabulary:word_order' unit.id %}">
+                <span class="mode-icon" aria-hidden="true">🧩</span>
+                <strong>Word Order</strong>
+                <span>Build correct English sentences word by word from the bank.</span>
+                <span class="mode-tag">Grammar</span>
+            </a>
+            {% endif %}
         </div>
     {% else %}
         <div class="empty-state">
-            <p>This unit has no words yet.</p>
+            <p>This unit has no words or sentences yet.</p>
             <a class="secondary-button" href="{% url 'vocabulary:unit_list' unit.level.id %}">Back to units</a>
         </div>
     {% endif %}

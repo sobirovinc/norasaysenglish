@@ -117,3 +117,21 @@ class VocabularyWord(models.Model):
 
     def __str__(self):
         return f'{self.uzbek_word} - {self.english_word}'
+
+
+class UnitSentence(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='sentences')
+    english_sentence = models.TextField()
+    uzbek_translation = models.TextField()
+    order = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ['order', 'id']
+        verbose_name = 'Sentence'
+        verbose_name_plural = 'Sentences'
+
+    def __str__(self):
+        preview = self.english_sentence[:60]
+        if len(self.english_sentence) > 60:
+            preview += '…'
+        return preview

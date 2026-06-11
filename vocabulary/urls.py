@@ -13,7 +13,9 @@ urlpatterns = [
     path('units/<int:unit_id>/vocabulary/', views.unit_vocabulary, name='unit_vocabulary'),
     path('units/<int:unit_id>/play/', views.game, name='game'),
     path('units/<int:unit_id>/spell/', views.spelling_game, name='spelling'),
+    path('units/<int:unit_id>/word-order/', views.word_order_game, name='word_order'),
     path('api/unit/<int:unit_id>/words/', views.unit_words_api, name='unit_words_api'),
+    path('api/unit/<int:unit_id>/sentences/', views.unit_sentences_api, name='unit_sentences_api'),
     path('api/shooter/<int:unit_id>/words/', views.shooter_words_api, name='shooter_words_api'),
     path('api/game-events/', views.game_events_api, name='game_events_api'),
 ]

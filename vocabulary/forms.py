@@ -96,3 +96,102 @@ class VocabularyImportForm(forms.Form):
             'uzbek_word': uzbek_word,
             'english_word': english_word,
         }
+
+
+class SentenceImportForm(forms.Form):
+    json_file = forms.FileField(
+        required=False,
+        label='JSON file',
+        help_text='Upload a .json file with sentence pairs.',
+    )
+    json_text = forms.CharField(
+        required=False,
+        label='Or paste JSON',
+        widget=forms.Textarea(attrs={'rows': 12}),
+        help_text='Use [{"english": "...", "uzbek": "..."}] or {"English sentence": "Uzbek translation"}.',
+    )
+    replace_existing = forms.BooleanField(
+        required=False,
+        label='Delete current sentences in this unit before importing',
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        json_file = cleaned_data.get('json_file')
+        json_text = cleaned_data.get('json_text', '').strip()
+
+        if not json_file and not json_text:
+            raise forms.ValidationError('Upload a JSON file or paste JSON text.')
+
+        if json_file and json_text:
+            raise forms.ValidationError('Use either a JSON file or pasted JSON text, not both.')
+
+        raw_json = self._read_file(json_file) if json_file else json_text
+
+        try:
+            parsed = json.loads(raw_json)
+        except json.JSONDecodeError as error:
+            raise forms.ValidationError(f'Invalid JSON: {error.msg}.') from error
+
+        cleaned_data['sentences'] = self._normalize_sentences(parsed)
+        return cleaned_data
+
+    def _read_file(self, uploaded_file):
+        try:
+            return uploaded_file.read().decode('utf-8')
+        except UnicodeDecodeError as error:
+            raise forms.ValidationError('JSON file must be UTF-8 encoded.') from error
+
+    def _normalize_sentences(self, parsed_json):
+        if isinstance(parsed_json, dict):
+            sentences = [
+                {'english_sentence': english, 'uzbek_translation': uzbek}
+                for english, uzbek in parsed_json.items()
+            ]
+        elif isinstance(parsed_json, list):
+            sentences = [
+                self._normalize_list_item(item, index)
+                for index, item in enumerate(parsed_json, start=1)
+            ]
+        else:
+            raise forms.ValidationError('JSON must be a list of sentence objects or a key/value object.')
+
+        normalized = []
+        for index, sentence in enumerate(sentences, start=1):
+            english = str(sentence['english_sentence']).strip()
+            uzbek = str(sentence['uzbek_translation']).strip()
+
+            if not english or not uzbek:
+                raise forms.ValidationError(f'Sentence #{index} must have both English and Uzbek text.')
+
+            normalized.append({
+                'english_sentence': english,
+                'uzbek_translation': uzbek,
+            })
+
+        return normalized
+
+    def _normalize_list_item(self, item, index):
+        if not isinstance(item, dict):
+            raise forms.ValidationError(f'Sentence #{index} must be an object.')
+
+        english = (
+            item.get('english')
+            or item.get('english_sentence')
+            or item.get('sentence')
+        )
+        uzbek = (
+            item.get('uzbek')
+            or item.get('uzbek_translation')
+            or item.get('translation')
+        )
+
+        if english is None or uzbek is None:
+            raise forms.ValidationError(
+                f'Sentence #{index} must include english and uzbek keys.'
+            )
+
+        return {
+            'english_sentence': english,
+            'uzbek_translation': uzbek,
+        }

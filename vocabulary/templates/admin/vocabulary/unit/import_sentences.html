@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:vocabulary_unit_changelist' %}">Units</a>
+    &rsaquo; <a href="{% url 'admin:vocabulary_unit_change' unit.id %}">{{ unit }}</a>
+    &rsaquo; Import sentences
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <p>
+        Upload or paste sentences for <strong>{{ unit }}</strong>.
+        Each entry needs English and Uzbek text.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <fieldset class="module aligned">
+            {% for field in form %}
+                <div class="form-row">
+                    {{ field.errors }}
+                    <div>
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="help">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </fieldset>
+
+        <div class="submit-row">
+            <input type="submit" value="Import sentences" class="default">
+            <a href="{% url 'admin:vocabulary_unit_change' unit.id %}" class="button cancel-link">Cancel</a>
+        </div>
+    </form>
+
+    <h2>Accepted JSON formats</h2>
+    <pre>[
+  {"english": "I go to school every day.", "uzbek": "Men har kuni maktabga boraman."}
+]</pre>
+    <pre>{
+  "I go to school every day.": "Men har kuni maktabga boraman."
+}</pre>
+</div>
+{% endblock %}

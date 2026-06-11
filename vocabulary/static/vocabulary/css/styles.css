@@ -2349,3 +2349,483 @@ body.shooter-page {
         padding-bottom: env(safe-area-inset-bottom);
     }
 }
+
+/* ═══════════════════════════════════════════
+   Word Order game
+   ═══════════════════════════════════════════ */
+body.word-order-page {
+    height: 100dvh;
+    overflow: hidden;
+    background: linear-gradient(180deg, #f0f9ff 0%, var(--bg) 40%);
+}
+
+body.word-order-page.modal-open {
+    overflow: hidden;
+    touch-action: none;
+}
+
+.word-order-page .app-shell {
+    display: flex;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    min-height: 100dvh;
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+}
+
+.wo-shell {
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    max-width: 720px;
+    margin-inline: auto;
+    min-height: 0;
+    height: 100%;
+}
+
+.wo-topbar,
+.wo-status {
+    width: 100%;
+}
+
+.wo-subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.wo-hud .stat-mastery {
+    min-width: 72px;
+}
+
+.wo-message:empty {
+    display: none;
+}
+
+.wo-empty {
+    display: grid;
+    gap: 14px;
+    place-items: center;
+    padding: 28px 16px;
+    text-align: center;
+}
+
+.wo-difficulty {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+    overflow: auto;
+    padding-bottom: 12px;
+}
+
+.wo-difficulty h2 {
+    margin: 0;
+    font-size: 1.35rem;
+}
+
+.wo-difficulty-copy {
+    margin: 0;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.wo-difficulty-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.wo-difficulty-card {
+    display: grid;
+    gap: 6px;
+    padding: 18px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.wo-difficulty-card:hover,
+.wo-difficulty-card:focus-visible {
+    transform: translateY(-2px);
+    border-color: var(--brand);
+    outline: none;
+}
+
+.wo-difficulty-card strong {
+    font-size: 1.08rem;
+}
+
+.wo-difficulty-card span:last-child {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.wo-difficulty-icon {
+    font-size: 1.5rem;
+}
+
+.wo-difficulty-card--challenge {
+    border-color: #fecaca;
+    background: linear-gradient(180deg, #fff 0%, #fff7ed 100%);
+}
+
+.wo-game {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.wo-card-stage {
+    perspective: 1200px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.wo-card {
+    position: relative;
+    height: 100%;
+    min-height: 180px;
+    transition: transform 320ms ease;
+}
+
+.wo-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 180px;
+    transform-style: preserve-3d;
+    transition: transform 560ms cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.wo-card.is-flipped .wo-card-inner {
+    transform: rotateY(180deg);
+}
+
+.wo-card-face {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    padding: 18px 16px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    backface-visibility: hidden;
+}
+
+.wo-card-face--back {
+    transform: rotateY(180deg);
+    background: linear-gradient(180deg, #ecfdf5 0%, var(--surface) 100%);
+}
+
+.wo-card-label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.wo-sentence-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    line-height: 1.7;
+    font-size: clamp(1rem, 3.8vw, 1.2rem);
+    font-weight: 800;
+}
+
+.wo-slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    min-height: 44px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    transition: background 180ms ease, color 180ms ease;
+}
+
+.wo-slot.is-empty {
+    background: #e2e8f0;
+    color: #64748b;
+    letter-spacing: 0.08em;
+}
+
+.wo-slot.is-filled {
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+}
+
+.wo-translation-hint {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #fef9c3;
+    color: #854d0e;
+    font-weight: 700;
+}
+
+.wo-swipe-hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 220ms ease;
+}
+
+.wo-swipe-hint.is-visible {
+    opacity: 1;
+    animation: woSwipePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes woSwipePulse {
+    0%, 100% { transform: translateX(0); opacity: 0.55; }
+    50% { transform: translateX(6px); opacity: 1; }
+}
+
+.wo-completed-english {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.5;
+}
+
+.wo-completed-uzbek {
+    margin: 0;
+    color: var(--muted);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.wo-word-bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 4px 0;
+    max-height: 34vh;
+    overflow: auto;
+}
+
+.wo-word-block {
+    min-height: 52px;
+    min-width: 56px;
+    padding: 12px 16px;
+    border: 2px solid var(--brand);
+    border-radius: 14px;
+    background: #ffffff;
+    color: var(--brand-dark);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wo-word-block:active {
+    transform: scale(0.96);
+}
+
+.wo-word-block.is-wrong {
+    animation: woShake 420ms ease;
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.wo-word-block.is-hinted {
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.45);
+    border-color: #f59e0b;
+    animation: woHintPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes woShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+}
+
+@keyframes woHintPulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35); }
+    50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15); }
+}
+
+.wo-word-flyer {
+    position: fixed;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    font-weight: 800;
+    pointer-events: none;
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), width 320ms ease;
+}
+
+.wo-hint-panel {
+    display: grid;
+    gap: 8px;
+}
+
+.wo-hint-label {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.wo-hint-note {
+    font-weight: 700;
+}
+
+.wo-hint-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.wo-hint-btn {
+    flex: 1 1 calc(33% - 8px);
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.wo-completion-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.wo-action-btn {
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.wo-action-btn--primary {
+    grid-column: 1 / -1;
+    border-color: var(--brand);
+    background: var(--brand);
+    color: #fff;
+}
+
+.wo-card.is-success-pulse {
+    animation: woSuccessPulse 520ms ease;
+}
+
+.wo-card.is-challenge-flash {
+    animation: woChallengeFlash 700ms ease;
+}
+
+.wo-card.is-timed-out .wo-card-face--front {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.wo-card.is-sliding-out {
+    animation: woSlideOut 260ms ease forwards;
+}
+
+.wo-card.is-sliding-in {
+    animation: woSlideIn 320ms ease;
+}
+
+@keyframes woSuccessPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(22, 106, 91, 0.18); }
+}
+
+@keyframes woChallengeFlash {
+    0%, 100% { filter: brightness(1); }
+    40% { filter: brightness(1.15); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.35); }
+}
+
+@keyframes woSlideOut {
+    to { transform: translateX(-110%); opacity: 0; }
+}
+
+@keyframes woSlideIn {
+    from { transform: translateX(110%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.lives-display.is-shake {
+    animation: woShake 420ms ease;
+}
+
+#woTimerWrap.is-low {
+    color: #d97706;
+}
+
+#woTimerWrap.is-critical {
+    color: #dc2626;
+    animation: woHintPulse 1s ease-in-out infinite;
+}
+
+.mode-card--wordorder .mode-tag {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.mode-card--wordorder {
+    grid-column: 1 / -1;
+}
+
+@media (min-width: 720px) {
+    .wo-difficulty-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .wo-shell {
+        max-width: 820px;
+    }
+
+    .wo-game {
+        grid-template-rows: minmax(220px, 1fr) auto auto auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .wo-hint-btn {
+        flex: 1 1 100%;
+    }
+
+    .wo-hud .stat-mastery {
+        display: none;
+    }
+}

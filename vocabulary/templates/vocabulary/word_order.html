@@ -1,0 +1,222 @@
+{% extends 'vocabulary/base.html' %}
+{% load static %}
+
+{% block title %}{{ unit.title }} · Word Order | Nora says English{% endblock %}
+{% block body_class %}word-order-page{% endblock %}
+{% block site_header %}{% endblock %}
+{% block site_footer %}{% endblock %}
+
+{% block content %}
+<div
+    id="wordOrderRoot"
+    class="wo-shell"
+    data-unit-id="{{ unit.id }}"
+    data-home-url="{% url 'vocabulary:home' %}"
+    data-intro-url="{% url 'vocabulary:unit_intro' unit.id %}"
+    data-sentences-api-url="{% url 'vocabulary:unit_sentences_api' unit.id %}"
+    data-sound-correct="{% static 'vocabulary/audio/shooter/laser_beam.mp3' %}"
+    data-sound-wrong="{% static 'vocabulary/audio/shooter/wrong_character.mp3' %}"
+    data-sound-life-lost="{% static 'vocabulary/audio/shooter/explosion.mp3' %}"
+    data-sound-round-complete="{% static 'vocabulary/audio/shooter/word_falls.mp3' %}"
+    data-sound-round-failed="{% static 'vocabulary/audio/shooter/game_over.mp3' %}"
+    data-sound-timer-expired="{% static 'vocabulary/audio/shooter/game_over.mp3' %}"
+    data-sound-unit-complete="{% static 'vocabulary/audio/shooter/word_falls.mp3' %}"
+    data-sound-sentence-complete="{% static 'vocabulary/audio/shooter/laser_beam.mp3' %}"
+>
+    <header class="game-topbar wo-topbar">
+        <a class="topbar-button icon-button back-link" href="{% url 'vocabulary:unit_intro' unit.id %}" aria-label="Back to unit">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18 9 12l6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+        <a class="topbar-button icon-button" href="{% url 'vocabulary:home' %}" aria-label="Home">
+            <svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5Z" fill="currentColor"/>
+            </svg>
+        </a>
+        <button id="woMuteButton" class="topbar-button icon-button mute-toggle-btn" type="button" aria-pressed="false" aria-label="Mute sound">
+            <i class="fa-solid fa-volume-high icon-sound-on" aria-hidden="true"></i>
+            <i class="fa-solid fa-volume-xmark icon-sound-off" aria-hidden="true" hidden></i>
+        </button>
+        <div class="game-hud-stats wo-hud">
+            <div class="stat stat-lives" aria-label="Lives">
+                <span id="woLives" class="lives-display"></span>
+            </div>
+            <div class="stat stat-score" aria-label="Score">
+                <i class="fa-solid fa-star stat-icon" aria-hidden="true"></i>
+                <span id="woScore">0</span>
+            </div>
+            <div class="stat stat-time" id="woTimerWrap" aria-label="Timer" hidden>
+                <i class="fa-solid fa-clock stat-icon" aria-hidden="true"></i>
+                <span id="woTimer">60</span>
+            </div>
+            <div class="stat stat-mastery" aria-label="Mastery">
+                <i class="fa-solid fa-chart-line stat-icon" aria-hidden="true"></i>
+                <span id="woMastery">0%</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="wo-status">
+        <div class="game-title">
+            <p class="eyebrow">{{ unit.level.name }}</p>
+            <h1>{{ unit.title }}</h1>
+            <p class="wo-subtitle">Word Order</p>
+        </div>
+        <div class="unit-progress" aria-label="Round progress">
+            <div class="progress-copy">
+                <span>Progress</span>
+                <strong id="woRoundLabel">Round 1 / 1</strong>
+                <span id="woProgressPercent">0%</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+                <div id="woProgressFill" class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="woMessage" class="message wo-message" role="status" aria-live="polite"></div>
+
+    <div id="woLoading" class="game-loading" hidden>
+        <div class="game-loading-card">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Loading sentences…</p>
+        </div>
+    </div>
+
+    <div id="woEmptyState" class="wo-empty" hidden>
+        <p>This unit has no sentences yet.</p>
+        <a class="secondary-button" href="{% url 'vocabulary:unit_intro' unit.id %}">Back to unit</a>
+    </div>
+
+    <section id="woDifficultyScreen" class="wo-difficulty" hidden>
+        <h2>Choose difficulty</h2>
+        <p class="wo-difficulty-copy">Pick a mode for this round. You can change it before the next round.</p>
+        <div class="wo-difficulty-grid">
+            <button type="button" class="wo-difficulty-card" data-difficulty="guided">
+                <span class="wo-difficulty-icon" aria-hidden="true">🧭</span>
+                <strong>Guided</strong>
+                <span>3 words revealed · No timer · ×1 score</span>
+            </button>
+            <button type="button" class="wo-difficulty-card" data-difficulty="independent">
+                <span class="wo-difficulty-icon" aria-hidden="true">⚡</span>
+                <strong>Independent</strong>
+                <span>1 word revealed · 60s timer · ×1.5 score</span>
+            </button>
+            <button type="button" class="wo-difficulty-card wo-difficulty-card--challenge" data-difficulty="challenge">
+                <span class="wo-difficulty-icon" aria-hidden="true">🔥</span>
+                <strong>Challenge</strong>
+                <span>No reveals · 45s timer · ×2 score</span>
+            </button>
+        </div>
+    </section>
+
+    <section id="woGameScreen" class="wo-game" hidden>
+        <div id="woCardStage" class="wo-card-stage">
+            <div id="woSentenceCard" class="wo-card">
+                <div id="woCardInner" class="wo-card-inner">
+                    <div id="woCardFront" class="wo-card-face wo-card-face--front">
+                        <p class="wo-card-label">Build the sentence</p>
+                        <div id="woSentenceArea" class="wo-sentence-area" aria-live="polite"></div>
+                        <p id="woTranslationHint" class="wo-translation-hint" hidden></p>
+                        <div id="woSwipeHint" class="wo-swipe-hint" hidden>
+                            <span>Swipe right for next · Swipe left to review</span>
+                        </div>
+                    </div>
+                    <div id="woCardBack" class="wo-card-face wo-card-face--back">
+                        <p class="wo-card-label">Sentence complete</p>
+                        <p id="woCompletedEnglish" class="wo-completed-english"></p>
+                        <p id="woCompletedUzbek" class="wo-completed-uzbek"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="woWordBank" class="wo-word-bank" aria-label="Word bank"></div>
+
+        <div id="woHintPanel" class="wo-hint-panel">
+            <p class="wo-hint-label">Hints <span class="wo-hint-note">(cost points · marks for review)</span></p>
+            <div class="wo-hint-actions">
+                <button type="button" class="wo-hint-btn" data-hint="nextWord">Next word · 10</button>
+                <button type="button" class="wo-hint-btn" data-hint="translation">Translation · 30</button>
+                <button type="button" class="wo-hint-btn" data-hint="revealAnswer">Reveal answer · 50</button>
+            </div>
+        </div>
+
+        <div id="woCompletionActions" class="wo-completion-actions" hidden>
+            <button id="woSpeakEnglish" type="button" class="wo-action-btn">🔊 English</button>
+            <button id="woSpeakUzbek" type="button" class="wo-action-btn">🔊 Uzbek</button>
+            <button id="woReviewLater" type="button" class="wo-action-btn">📌 Review Later</button>
+            <button id="woNextSentence" type="button" class="wo-action-btn wo-action-btn--primary">➡ Next</button>
+        </div>
+    </section>
+
+    <div id="woRoundCompleteModal" class="game-modal wo-modal" hidden role="dialog" aria-modal="true" aria-labelledby="woRoundCompleteTitle">
+        <div class="game-modal-card">
+            <h2 id="woRoundCompleteTitle" class="game-modal-title">Round Complete!</h2>
+            <p class="game-modal-message">Great work building sentences.</p>
+            <dl class="stats-grid">
+                <div><dt>Score</dt><dd data-stat="score">0</dd></div>
+                <div><dt>Mastery</dt><dd data-stat="mastery">0%</dd></div>
+                <div><dt>Correct words</dt><dd data-stat="correctWords">0</dd></div>
+                <div><dt>Mistakes</dt><dd data-stat="mistakes">0</dd></div>
+                <div><dt>Lives left</dt><dd data-stat="lives">0</dd></div>
+            </dl>
+            <div class="modal-actions">
+                <button type="button" class="secondary-button" data-action="home">Home</button>
+                <button type="button" class="primary-button" data-action="retry-round">Retry Round</button>
+                <button type="button" class="primary-button" data-action="next-round">Next Round</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="woGameOverModal" class="game-modal wo-modal" hidden role="dialog" aria-modal="true" aria-labelledby="woGameOverTitle">
+        <div class="game-modal-card">
+            <h2 id="woGameOverTitle" class="game-modal-title">Game Over</h2>
+            <p class="game-modal-message">You ran out of lives. Try again!</p>
+            <dl class="stats-grid">
+                <div><dt>Score</dt><dd data-stat="score">0</dd></div>
+                <div><dt>Mastery</dt><dd data-stat="mastery">0%</dd></div>
+                <div><dt>Correct words</dt><dd data-stat="correctWords">0</dd></div>
+                <div><dt>Mistakes</dt><dd data-stat="mistakes">0</dd></div>
+            </dl>
+            <div class="modal-actions modal-actions--two">
+                <button type="button" class="secondary-button" data-action="home">Home</button>
+                <button type="button" class="primary-button" data-action="retry-round">Retry Round</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="woUnitCompleteModal" class="game-modal wo-modal" hidden role="dialog" aria-modal="true" aria-labelledby="woUnitCompleteTitle">
+        <div class="game-modal-card">
+            <h2 id="woUnitCompleteTitle" class="game-modal-title">Unit Complete!</h2>
+            <p class="game-modal-message">You finished every round in this unit.</p>
+            <dl class="stats-grid">
+                <div><dt>Score</dt><dd data-stat="score">0</dd></div>
+                <div><dt>Mastery</dt><dd data-stat="mastery">0%</dd></div>
+                <div><dt>Correct words</dt><dd data-stat="correctWords">0</dd></div>
+                <div><dt>Mistakes</dt><dd data-stat="mistakes">0</dd></div>
+            </dl>
+            <div class="modal-actions modal-actions--two">
+                <button type="button" class="secondary-button" data-action="home">Home</button>
+                {% if next_unit %}
+                    <a class="primary-button" href="{% url 'vocabulary:unit_intro' next_unit.id %}">Next Unit</a>
+                {% else %}
+                    <button type="button" class="primary-button" data-action="home">Finish</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vocabulary/js/speak.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/config.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/roundPlanner.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/sentenceParser.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/gameLogic.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/sounds.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/gameUI.js' %}" defer></script>
+<script src="{% static 'vocabulary/js/wordorder/main.js' %}" defer></script>
+{% endblock %}

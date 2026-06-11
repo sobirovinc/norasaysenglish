@@ -36,6 +36,7 @@ def unit_list(request, level_id):
 def unit_intro(request, unit_id):
     unit = get_object_or_404(Unit.objects.select_related('level'), pk=unit_id)
     word_count = unit.words.count()
+    sentence_count = unit.sentences.count()
     round_size = 7
     round_count = max(1, math.ceil(word_count / round_size)) if word_count else 0
     estimated_minutes = max(1, round_count * 2)
@@ -43,6 +44,7 @@ def unit_intro(request, unit_id):
     return render(request, 'vocabulary/unit_intro.html', {
         'unit': unit,
         'word_count': word_count,
+        'sentence_count': sentence_count,
         'round_count': round_count,
         'estimated_minutes': estimated_minutes,
     })
@@ -69,6 +71,19 @@ def spelling_game(request, unit_id):
         .first()
     )
     return render(request, 'vocabulary/spelling.html', {
+        'unit': unit,
+        'next_unit': next_unit,
+    })
+
+
+def word_order_game(request, unit_id):
+    unit = get_object_or_404(Unit.objects.select_related('level'), pk=unit_id)
+    next_unit = (
+        Unit.objects.filter(level=unit.level, order__gt=unit.order)
+        .order_by('order')
+        .first()
+    )
+    return render(request, 'vocabulary/word_order.html', {
         'unit': unit,
         'next_unit': next_unit,
     })
@@ -104,6 +119,10 @@ def shooter_words_api(request, unit_id):
     return JsonResponse(get_unit_words(unit_id), safe=False)
 
 
+def unit_sentences_api(request, unit_id):
+    return JsonResponse(get_unit_sentences(unit_id), safe=False)
+
+
 def get_unit_words(unit_id):
     unit = get_object_or_404(Unit.objects.prefetch_related('words'), pk=unit_id)
     return [
@@ -112,6 +131,18 @@ def get_unit_words(unit_id):
             'english': word.english_word,
         }
         for word in unit.words.all()
+    ]
+
+
+def get_unit_sentences(unit_id):
+    unit = get_object_or_404(Unit.objects.prefetch_related('sentences'), pk=unit_id)
+    return [
+        {
+            'id': sentence.id,
+            'english': sentence.english_sentence,
+            'uzbek': sentence.uzbek_translation,
+        }
+        for sentence in unit.sentences.all()
     ]
 
 

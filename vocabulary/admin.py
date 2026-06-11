@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .forms import VocabularyImportForm
-from .models import GameEventAsset, Level, TeacherProfile, Unit, VocabularyWord
+from .forms import SentenceImportForm, VocabularyImportForm
+from .models import GameEventAsset, Level, TeacherProfile, Unit, UnitSentence, VocabularyWord
 
 
 class UnitInline(admin.TabularInline):
@@ -18,6 +18,12 @@ class VocabularyWordInline(admin.TabularInline):
     extra = 3
 
 
+class UnitSentenceInline(admin.TabularInline):
+    model = UnitSentence
+    extra = 2
+    fields = ('order', 'english_sentence', 'uzbek_translation')
+
+
 @admin.register(Level)
 class LevelAdmin(admin.ModelAdmin):
     list_display = ('name',)
@@ -27,11 +33,11 @@ class LevelAdmin(admin.ModelAdmin):
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
-    list_display = ('title', 'level', 'order', 'import_words_link')
+    list_display = ('title', 'level', 'order', 'import_words_link', 'import_sentences_link')
     list_filter = ('level',)
     search_fields = ('title', 'level__name')
     ordering = ('level__name', 'order')
-    inlines = (VocabularyWordInline,)
+    inlines = (VocabularyWordInline, UnitSentenceInline)
 
     def get_urls(self):
         urls = super().get_urls()
@@ -41,14 +47,25 @@ class UnitAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(self.import_words),
                 name='vocabulary_unit_import_words',
             ),
+            path(
+                '<int:unit_id>/import-sentences/',
+                self.admin_site.admin_view(self.import_sentences),
+                name='vocabulary_unit_import_sentences',
+            ),
         ]
         return custom_urls + urls
 
     def import_words_link(self, unit):
         url = reverse('admin:vocabulary_unit_import_words', args=[unit.id])
-        return format_html('<a href="{}">Import JSON</a>', url)
+        return format_html('<a href="{}">Import words</a>', url)
 
-    import_words_link.short_description = 'Bulk import'
+    import_words_link.short_description = 'Words'
+
+    def import_sentences_link(self, unit):
+        url = reverse('admin:vocabulary_unit_import_sentences', args=[unit.id])
+        return format_html('<a href="{}">Import sentences</a>', url)
+
+    import_sentences_link.short_description = 'Sentences'
 
     def import_words(self, request, unit_id):
         unit = get_object_or_404(Unit.objects.select_related('level'), pk=unit_id)
@@ -98,12 +115,76 @@ class UnitAdmin(admin.ModelAdmin):
 
         return created_count, updated_count
 
+    def import_sentences(self, request, unit_id):
+        unit = get_object_or_404(Unit.objects.select_related('level'), pk=unit_id)
+
+        if request.method == 'POST':
+            form = SentenceImportForm(request.POST, request.FILES)
+            if form.is_valid():
+                created_count = self.save_imported_sentences(unit, form.cleaned_data)
+                messages.success(
+                    request,
+                    f'Imported {created_count} sentences for {unit}.',
+                )
+                return redirect('admin:vocabulary_unit_change', unit.id)
+        else:
+            form = SentenceImportForm()
+
+        context = {
+            **self.admin_site.each_context(request),
+            'opts': self.model._meta,
+            'title': f'Import sentences for {unit}',
+            'unit': unit,
+            'form': form,
+        }
+        return render(request, 'admin/vocabulary/unit/import_sentences.html', context)
+
+    def save_imported_sentences(self, unit, cleaned_data):
+        sentences = cleaned_data['sentences']
+        replace_existing = cleaned_data['replace_existing']
+
+        with transaction.atomic():
+            if replace_existing:
+                unit.sentences.all().delete()
+
+            start_order = unit.sentences.count() + 1
+            created = []
+            for offset, sentence in enumerate(sentences):
+                created.append(UnitSentence.objects.create(
+                    unit=unit,
+                    english_sentence=sentence['english_sentence'],
+                    uzbek_translation=sentence['uzbek_translation'],
+                    order=start_order + offset,
+                ))
+
+        return len(created)
+
 
 @admin.register(VocabularyWord)
 class VocabularyWordAdmin(admin.ModelAdmin):
     list_display = ('uzbek_word', 'english_word', 'unit')
     list_filter = ('unit__level', 'unit')
     search_fields = ('uzbek_word', 'english_word', 'unit__title')
+
+
+@admin.register(UnitSentence)
+class UnitSentenceAdmin(admin.ModelAdmin):
+    list_display = ('english_preview', 'uzbek_preview', 'unit', 'order')
+    list_filter = ('unit__level', 'unit')
+    search_fields = ('english_sentence', 'uzbek_translation', 'unit__title')
+    ordering = ('unit__level__name', 'unit__order', 'order', 'id')
+
+    def english_preview(self, sentence):
+        text = sentence.english_sentence
+        return text[:70] + ('…' if len(text) > 70 else '')
+
+    english_preview.short_description = 'English'
+
+    def uzbek_preview(self, sentence):
+        text = sentence.uzbek_translation
+        return text[:70] + ('…' if len(text) > 70 else '')
+
+    uzbek_preview.short_description = 'Uzbek'
 
 
 @admin.register(TeacherProfile)
