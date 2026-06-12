@@ -51,10 +51,24 @@ class WordOrderUI {
             roundCompleteModal: document.getElementById('woRoundCompleteModal'),
             gameOverModal: document.getElementById('woGameOverModal'),
             unitCompleteModal: document.getElementById('woUnitCompleteModal'),
+            hintToggle: document.getElementById('woHintToggle'),
+            hintDropdown: document.getElementById('woHintDropdown'),
         };
     }
 
     bindEvents() {
+        this.elements.hintToggle?.addEventListener('click', () => {
+            const open = !this.elements.hintDropdown.hidden;
+            this.elements.hintDropdown.hidden = open;
+            this.elements.hintToggle.setAttribute('aria-expanded', String(!open));
+        });
+        document.addEventListener('click', (e) => {
+            if (!this.elements.hintToggle?.contains(e.target) && !this.elements.hintDropdown?.contains(e.target)) {
+                if (this.elements.hintDropdown) this.elements.hintDropdown.hidden = true;
+                this.elements.hintToggle?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
         this.elements.difficultyButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 WordOrderAudio.unlock();
@@ -191,7 +205,7 @@ class WordOrderUI {
             this.elements.translationHint.textContent = state.raw.uzbek;
         }
         this.elements.completionActions.hidden = true;
-        this.elements.hintPanel.hidden = difficulty.id === 'challenge';
+        if (this.elements.hintToggle) this.elements.hintToggle.hidden = difficulty.id === 'challenge';
         this.elements.timerWrap.hidden = !difficulty.timerSeconds;
         this.elements.swipeHint.hidden = !showSwipeHint || difficulty.autoAdvance;
         if (showSwipeHint && !difficulty.autoAdvance) {
@@ -259,6 +273,12 @@ class WordOrderUI {
         this.updateHud();
 
         const bankButton = this.elements.wordBank.querySelector(`[data-bank-id="${payload.bankItem.id}"]`);
+        bankButton.style.transition = 'opacity 0.25s, width 0.4s ease, padding 0.4s ease, margin 0.4s ease';
+        bankButton.style.opacity = '0';
+        bankButton.style.width = '0';
+        bankButton.style.padding = '0';
+        bankButton.style.margin = '0';
+        bankButton.style.overflow = 'hidden';
         const targetSlot = this.elements.sentenceArea.querySelector('.wo-slot.is-empty');
 
         if (bankButton && targetSlot) {
@@ -266,7 +286,6 @@ class WordOrderUI {
                 targetSlot.classList.remove('is-empty');
                 targetSlot.classList.add('is-filled');
                 targetSlot.textContent = payload.token.text + payload.token.punctuation;
-                bankButton.remove();
             });
         } else {
             this.renderSentenceArea(this.game.currentSentence);
@@ -379,7 +398,7 @@ class WordOrderUI {
         window.setTimeout(() => {
             flyer.remove();
             onDone();
-        }, 340);
+        }, 480);
     }
 
     highlightHintWord(bankId) {

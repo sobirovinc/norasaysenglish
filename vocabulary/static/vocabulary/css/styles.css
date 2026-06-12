@@ -2635,7 +2635,11 @@ body.word-order-page.modal-open {
     font-size: 1rem;
     font-weight: 800;
     cursor: pointer;
-    transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    transition: opacity 0.25s ease, 
+                width 0.4s ease, 
+                padding 0.4s ease, 
+                margin 0.4s ease,
+                flex 0.4s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -2681,8 +2685,7 @@ body.word-order-page.modal-open {
     color: var(--brand-dark);
     font-weight: 800;
     pointer-events: none;
-    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), width 320ms ease;
-}
+    transition: transform 0.48s cubic-bezier(0.4, 0, 0.2, 1), width 0.48s;
 
 .wo-hint-panel {
     display: grid;
