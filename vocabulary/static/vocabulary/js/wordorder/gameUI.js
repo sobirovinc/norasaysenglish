@@ -1,5 +1,6 @@
 /**
  * DOM rendering, animations, and input for the Word Order game.
+ * Card scene mirrors vocabulary study flashcards (#interactiveCard).
  */
 class WordOrderUI {
     constructor(root, game) {
@@ -7,9 +8,13 @@ class WordOrderUI {
         this.game = game;
         this.pendingRoundIndex = 0;
         this.elements = this.collectElements();
-        this.touchStartX = 0;
-        this.touchStartY = 0;
         this.autoAdvanceTimer = null;
+        this._swipeDragging = false;
+        this._swipeStartX = 0;
+        this._swipeStartY = 0;
+        this._swipeMoveX = 0;
+        this._isAnimating = false;
+        this.SWIPE_THRESHOLD = 90;
         this.bindEvents();
         this.bindGameEvents();
     }
@@ -31,19 +36,13 @@ class WordOrderUI {
             mastery: document.getElementById('woMastery'),
             cardStage: document.getElementById('woCardStage'),
             card: document.getElementById('woSentenceCard'),
-            cardInner: document.getElementById('woCardInner'),
-            cardFront: document.getElementById('woCardFront'),
-            cardBack: document.getElementById('woCardBack'),
             sentenceArea: document.getElementById('woSentenceArea'),
             wordBank: document.getElementById('woWordBank'),
             translationHint: document.getElementById('woTranslationHint'),
-            swipeHint: document.getElementById('woSwipeHint'),
-            hintPanel: document.getElementById('woHintPanel'),
+            swipeHintLeft: document.getElementById('woSwipeHintLeft'),
+            swipeHintRight: document.getElementById('woSwipeHintRight'),
             hintButtons: this.root.querySelectorAll('[data-hint]'),
-            completionActions: document.getElementById('woCompletionActions'),
             speakEnglishBtn: document.getElementById('woSpeakEnglish'),
-            speakUzbekBtn: document.getElementById('woSpeakUzbek'),
-            reviewLaterBtn: document.getElementById('woReviewLater'),
             nextSentenceBtn: document.getElementById('woNextSentence'),
             completedEnglish: document.getElementById('woCompletedEnglish'),
             completedUzbek: document.getElementById('woCompletedUzbek'),
@@ -62,9 +61,12 @@ class WordOrderUI {
             this.elements.hintDropdown.hidden = open;
             this.elements.hintToggle.setAttribute('aria-expanded', String(!open));
         });
-        document.addEventListener('click', (e) => {
-            if (!this.elements.hintToggle?.contains(e.target) && !this.elements.hintDropdown?.contains(e.target)) {
-                if (this.elements.hintDropdown) this.elements.hintDropdown.hidden = true;
+        document.addEventListener('click', (event) => {
+            if (!this.elements.hintToggle?.contains(event.target)
+                && !this.elements.hintDropdown?.contains(event.target)) {
+                if (this.elements.hintDropdown) {
+                    this.elements.hintDropdown.hidden = true;
+                }
                 this.elements.hintToggle?.setAttribute('aria-expanded', 'false');
             }
         });
@@ -72,34 +74,31 @@ class WordOrderUI {
         this.elements.difficultyButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 WordOrderAudio.unlock();
-                const difficultyId = button.dataset.difficulty;
-                this.startGame(difficultyId);
+                this.startGame(button.dataset.difficulty);
             });
         });
 
         this.elements.hintButtons.forEach((button) => {
             button.addEventListener('click', () => {
-                const hintType = button.dataset.hint;
-                const result = this.game.useHint(hintType);
+                const result = this.game.useHint(button.dataset.hint);
                 if (result?.type === 'insufficient') {
                     this.flashMessage('Not enough points for that hint.');
                 }
+                if (this.elements.hintDropdown) {
+                    this.elements.hintDropdown.hidden = true;
+                }
+                this.elements.hintToggle?.setAttribute('aria-expanded', 'false');
             });
         });
 
-        this.elements.nextSentenceBtn?.addEventListener('click', () => this.goToNextSentence());
-        this.elements.reviewLaterBtn?.addEventListener('click', () => {
-            this.game.markReviewLater();
-            this.flashMessage('Added to review queue.');
+        this.elements.nextSentenceBtn?.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.slideAndAdvance('left');
         });
-        this.elements.speakEnglishBtn?.addEventListener('click', () => {
+        this.elements.speakEnglishBtn?.addEventListener('click', (event) => {
+            event.stopPropagation();
             if (this.game.currentSentence) {
                 VocabSpeech.speakEnglish(this.game.currentSentence.raw.english);
-            }
-        });
-        this.elements.speakUzbekBtn?.addEventListener('click', () => {
-            if (this.game.currentSentence) {
-                VocabSpeech.speakUzbek(this.game.currentSentence.raw.uzbek);
             }
         });
 
@@ -123,25 +122,24 @@ class WordOrderUI {
         });
 
         this.elements.muteButton?.addEventListener('click', () => this.toggleMute());
-
-        if (this.elements.card) {
-            this.elements.card.addEventListener('touchstart', (event) => this.onTouchStart(event), { passive: true });
-            this.elements.card.addEventListener('touchend', (event) => this.onTouchEnd(event));
-        }
+        this.setupSwipe();
     }
 
     bindGameEvents() {
         this.game.on('sentenceLoaded', (payload) => this.renderSentence(payload));
         this.game.on('wordCorrect', (payload) => this.onWordCorrect(payload));
         this.game.on('wordWrong', (payload) => this.onWordWrong(payload));
-        this.game.on('wordAutoPlaced', (payload) => this.onWordAutoPlaced(payload));
-        this.game.on('lifeLost', (payload) => this.onLifeLost(payload));
+        this.game.on('wordAutoPlaced', () => this.onWordAutoPlaced());
+        this.game.on('lifeLost', () => this.onLifeLost());
         this.game.on('scoreChanged', (payload) => this.updateScore(payload.score));
         this.game.on('timerTick', (payload) => this.updateTimer(payload.remaining));
         this.game.on('sentenceComplete', (payload) => this.onSentenceComplete(payload));
         this.game.on('hintNextWord', (payload) => this.highlightHintWord(payload.bankId));
         this.game.on('hintTranslation', (payload) => this.showTranslation(payload.text));
-        this.game.on('hintRevealAnswer', () => this.renderSentenceArea(this.game.currentSentence));
+        this.game.on('hintRevealAnswer', () => {
+            this.renderSentenceArea(this.game.currentSentence);
+            this.renderWordBank(this.game.currentSentence);
+        });
         this.game.on('timerExpired', () => {
             WordOrderAudio.play('timer_expired');
             this.elements.card?.classList.add('is-timed-out');
@@ -192,6 +190,21 @@ class WordOrderUI {
         document.body.classList.remove('wo-playing');
     }
 
+    canSwipeCard() {
+        if (this.game.difficulty?.autoAdvance || this._isAnimating) {
+            return false;
+        }
+        if (!this.game.awaitingAdvance) {
+            return false;
+        }
+        const state = this.game.currentSentence;
+        return Boolean(
+            state?.answerRevealed
+            || this.game.timedOutThisSentence
+            || state?.tokens.every((token) => token.placed),
+        );
+    }
+
     renderSentence(payload) {
         const { state, showSwipeHint, difficulty } = payload;
         this.clearAutoAdvance();
@@ -204,14 +217,13 @@ class WordOrderUI {
         if (state.translationVisible) {
             this.elements.translationHint.textContent = state.raw.uzbek;
         }
-        this.elements.completionActions.hidden = true;
-        if (this.elements.hintToggle) this.elements.hintToggle.hidden = difficulty.id === 'challenge';
+        if (this.elements.hintToggle) {
+            this.elements.hintToggle.hidden = difficulty.id === 'challenge';
+        }
         this.elements.timerWrap.hidden = !difficulty.timerSeconds;
-        this.elements.swipeHint.hidden = !showSwipeHint || difficulty.autoAdvance;
+
         if (showSwipeHint && !difficulty.autoAdvance) {
-            this.elements.swipeHint.classList.add('is-visible');
-        } else {
-            this.elements.swipeHint.classList.remove('is-visible');
+            window.setTimeout(() => this.playSwipeHint(), 700);
         }
     }
 
@@ -273,19 +285,18 @@ class WordOrderUI {
         this.updateHud();
 
         const bankButton = this.elements.wordBank.querySelector(`[data-bank-id="${payload.bankItem.id}"]`);
-        bankButton.style.transition = 'opacity 0.25s, width 0.4s ease, padding 0.4s ease, margin 0.4s ease';
-        bankButton.style.opacity = '0';
-        bankButton.style.width = '0';
-        bankButton.style.padding = '0';
-        bankButton.style.margin = '0';
-        bankButton.style.overflow = 'hidden';
         const targetSlot = this.elements.sentenceArea.querySelector('.wo-slot.is-empty');
+
+        if (bankButton) {
+            bankButton.classList.add('is-removing');
+        }
 
         if (bankButton && targetSlot) {
             this.animateWordFly(bankButton, targetSlot, payload.token.text + payload.token.punctuation, () => {
                 targetSlot.classList.remove('is-empty');
                 targetSlot.classList.add('is-filled');
                 targetSlot.textContent = payload.token.text + payload.token.punctuation;
+                bankButton.remove();
             });
         } else {
             this.renderSentenceArea(this.game.currentSentence);
@@ -302,13 +313,35 @@ class WordOrderUI {
         }
     }
 
+    // onWordAutoPlaced() {
+    //     WordOrderAudio.play('correct_word');
+    //     this.updateScore(this.game.score);
+    //     this.renderSentenceArea(this.game.currentSentence);
+    //     this.renderWordBank(this.game.currentSentence);
+    //     this.elements.card?.classList.add('is-success-pulse');
+    //     window.setTimeout(() => this.elements.card?.classList.remove('is-success-pulse'), 520);
+    // }
+
     onWordAutoPlaced(payload) {
         WordOrderAudio.play('correct_word');
         this.updateScore(this.game.score);
-        this.renderSentenceArea(this.game.currentSentence);
-        this.renderWordBank(this.game.currentSentence);
-        this.elements.card?.classList.add('is-success-pulse');
-        window.setTimeout(() => this.elements.card?.classList.remove('is-success-pulse'), 500);
+
+        const bankButton = this.elements.wordBank.querySelector(`[data-bank-id="${payload.bankItem.id}"]`);
+        const targetSlot = this.elements.sentenceArea.querySelector('.wo-slot.is-empty');
+
+        if (bankButton && targetSlot) {
+            this.animateWordFly(bankButton, targetSlot, payload.token.text + payload.token.punctuation, () => {
+                targetSlot.classList.remove('is-empty');
+                targetSlot.classList.add('is-filled');
+                targetSlot.textContent = payload.token.text + payload.token.punctuation;
+                bankButton.remove();
+                this.elements.card?.classList.add('is-success-pulse');
+                window.setTimeout(() => this.elements.card?.classList.remove('is-success-pulse'), 500);
+            });
+        } else {
+            this.renderSentenceArea(this.game.currentSentence);
+            this.renderWordBank(this.game.currentSentence);
+        }
     }
 
     onLifeLost() {
@@ -334,29 +367,20 @@ class WordOrderUI {
             window.setTimeout(() => {
                 this.elements.card?.classList.remove('is-challenge-flash');
             }, WordOrderConfig.CHALLENGE_FLASH_MS);
-            this.autoAdvanceTimer = window.setTimeout(() => this.goToNextSentence(true), WordOrderConfig.AUTO_ADVANCE_MS);
+            this.autoAdvanceTimer = window.setTimeout(
+                () => this.slideAndAdvance('left'),
+                WordOrderConfig.AUTO_ADVANCE_MS,
+            );
             return;
         }
 
-        this.elements.card?.classList.add('is-flipped');
-        this.elements.completionActions.hidden = false;
+        this.elements.card?.classList.add('flipped');
         this.game.pauseTimer();
     }
 
-    goToNextSentence(fromAuto = false) {
-        if (!fromAuto && !this.game.awaitingAdvance) {
-            return;
-        }
-
-        this.clearAutoAdvance();
-        this.elements.card?.classList.add('is-sliding-out');
-        window.setTimeout(() => {
-            this.game.advanceSentence();
-            this.elements.card?.classList.remove('is-sliding-out');
-            this.elements.card?.classList.add('is-sliding-in');
-            window.setTimeout(() => this.elements.card?.classList.remove('is-sliding-in'), 320);
-            this.game.resumeTimer();
-        }, 260);
+    goToNextSentence() {
+        this.game.advanceSentence();
+        this.game.resumeTimer();
     }
 
     clearAutoAdvance() {
@@ -367,14 +391,24 @@ class WordOrderUI {
     }
 
     resetCardVisuals() {
-        this.elements.card?.classList.remove(
-            'is-flipped',
+        const card = this.elements.card;
+        if (!card) {
+            return;
+        }
+
+        card.classList.remove(
+            'flipped',
+            'swipe-left',
+            'swipe-right',
             'is-success-pulse',
             'is-challenge-flash',
             'is-timed-out',
-            'is-sliding-out',
-            'is-sliding-in',
         );
+        card.style.transform = '';
+        card.style.transition = '';
+        card.style.opacity = '';
+        this.hideSwipeOverlays();
+        this._isAnimating = false;
     }
 
     animateWordFly(sourceEl, targetEl, text, onDone) {
@@ -388,8 +422,6 @@ class WordOrderUI {
         flyer.style.width = `${sourceRect.width}px`;
         document.body.appendChild(flyer);
 
-        sourceEl.style.visibility = 'hidden';
-
         requestAnimationFrame(() => {
             flyer.style.transform = `translate(${targetRect.left - sourceRect.left}px, ${targetRect.top - sourceRect.top}px)`;
             flyer.style.width = `${targetRect.width}px`;
@@ -398,18 +430,199 @@ class WordOrderUI {
         window.setTimeout(() => {
             flyer.remove();
             onDone();
-        }, 480);
+        }, 620);
     }
 
     highlightHintWord(bankId) {
         this.renderWordBank(this.game.currentSentence);
-        const button = this.elements.wordBank.querySelector(`[data-bank-id="${bankId}"]`);
-        button?.classList.add('is-hinted');
+        this.elements.wordBank.querySelector(`[data-bank-id="${bankId}"]`)?.classList.add('is-hinted');
     }
 
     showTranslation(text) {
         this.elements.translationHint.hidden = false;
         this.elements.translationHint.textContent = text;
+    }
+
+    showSwipeOverlay(direction, opacity) {
+        if (direction === 'left' && this.elements.swipeHintLeft) {
+            this.elements.swipeHintLeft.style.opacity = String(opacity);
+        }
+        if (direction === 'right' && this.elements.swipeHintRight) {
+            this.elements.swipeHintRight.style.opacity = String(opacity);
+        }
+    }
+
+    hideSwipeOverlays() {
+        if (this.elements.swipeHintLeft) {
+            this.elements.swipeHintLeft.style.opacity = '0';
+        }
+        if (this.elements.swipeHintRight) {
+            this.elements.swipeHintRight.style.opacity = '0';
+        }
+    }
+
+    playSwipeHint() {
+        if (sessionStorage.getItem('nse-wo-swipe-hint')) {
+            return;
+        }
+        sessionStorage.setItem('nse-wo-swipe-hint', '1');
+
+        const card = this.elements.card;
+        if (!card) {
+            return;
+        }
+
+        const HALF = 60;
+        const transition = 'transform 0.35s ease-in-out';
+        const step = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
+
+        card.style.transition = 'none';
+        card.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+
+        step(() => {
+            card.style.transition = transition;
+            card.style.transform = `translate3d(-${HALF}px,0,0) rotate(-5deg)`;
+            this.showSwipeOverlay('left', 0.65);
+        });
+
+        window.setTimeout(() => {
+            step(() => {
+                card.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+                this.hideSwipeOverlays();
+            });
+        }, 480);
+
+        window.setTimeout(() => {
+            step(() => {
+                card.style.transform = `translate3d(${HALF}px,0,0) rotate(5deg)`;
+                this.showSwipeOverlay('right', 0.65);
+            });
+        }, 900);
+
+        window.setTimeout(() => {
+            step(() => {
+                card.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+                this.hideSwipeOverlays();
+                window.setTimeout(() => {
+                    card.style.transition = '';
+                    card.style.transform = '';
+                }, 400);
+            });
+        }, 1380);
+    }
+
+    setupSwipe() {
+        const card = this.elements.card;
+        if (!card) {
+            return;
+        }
+
+        const flipSuffix = () => (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
+
+        const onStart = (x, y, target) => {
+            if (target?.closest('#woSpeakEnglish, #woNextSentence, .wo-word-block, .wo-hint-row')) {
+                return;
+            }
+            if (!this.canSwipeCard()) {
+                return;
+            }
+            this._swipeDragging = true;
+            this._swipeStartX = x;
+            this._swipeStartY = y;
+            this._swipeMoveX = 0;
+            card.style.transition = 'none';
+        };
+
+        const onMove = (x, y) => {
+            if (!this._swipeDragging || this._isAnimating) {
+                return;
+            }
+
+            const dx = x - this._swipeStartX;
+            const dy = y - this._swipeStartY;
+            if (Math.abs(dx) <= Math.abs(dy) && Math.abs(dx) < 12) {
+                return;
+            }
+
+            this._swipeMoveX = dx;
+            const rot = dx * 0.08;
+            card.style.transform = `translate3d(${dx}px,0,0) rotate(${rot}deg)${flipSuffix()}`;
+
+            const ratio = Math.min(Math.abs(dx) / this.SWIPE_THRESHOLD, 1) * 0.9;
+            if (dx < 0) {
+                this.showSwipeOverlay('left', ratio);
+                this.showSwipeOverlay('right', 0);
+            } else if (dx > 0) {
+                this.showSwipeOverlay('right', ratio);
+                this.showSwipeOverlay('left', 0);
+            } else {
+                this.hideSwipeOverlays();
+            }
+        };
+
+        const onEnd = () => {
+            if (!this._swipeDragging) {
+                return;
+            }
+            this._swipeDragging = false;
+            card.style.transition = '';
+            card.style.transform = flipSuffix() ? 'rotateY(180deg)' : '';
+            this.hideSwipeOverlays();
+
+            const dx = this._swipeMoveX;
+            this._swipeMoveX = 0;
+
+            if (!this.canSwipeCard()) {
+                return;
+            }
+
+            if (dx < -this.SWIPE_THRESHOLD) {
+                this.slideAndAdvance('left');
+            } else if (dx > this.SWIPE_THRESHOLD) {
+                this.game.markReviewLater();
+                this.flashMessage('Added to review queue.');
+                this.slideAndAdvance('right');
+            }
+        };
+
+        card.addEventListener('touchstart', (event) => {
+            onStart(event.touches[0].clientX, event.touches[0].clientY, event.target);
+        }, { passive: true });
+        card.addEventListener('touchmove', (event) => {
+            onMove(event.touches[0].clientX, event.touches[0].clientY);
+        }, { passive: true });
+        card.addEventListener('touchend', onEnd);
+
+        card.addEventListener('mousedown', (event) => {
+            onStart(event.clientX, event.clientY, event.target);
+        });
+        window.addEventListener('mousemove', (event) => onMove(event.clientX, event.clientY));
+        window.addEventListener('mouseup', onEnd);
+    }
+
+    slideAndAdvance(direction) {
+        if (!this.canSwipeCard() && !this.game.timedOutThisSentence) {
+            if (this.game.awaitingAdvance) {
+                this.clearAutoAdvance();
+                this.goToNextSentence();
+            }
+            return;
+        }
+
+        const card = this.elements.card;
+        if (!card || this._isAnimating) {
+            return;
+        }
+
+        this.clearAutoAdvance();
+        this._isAnimating = true;
+        this.hideSwipeOverlays();
+        card.classList.add(direction === 'left' ? 'swipe-left' : 'swipe-right');
+
+        window.setTimeout(() => {
+            this.goToNextSentence();
+            this.resetCardVisuals();
+        }, 380);
     }
 
     updateHud() {
@@ -450,7 +663,6 @@ class WordOrderUI {
 
     updateProgress() {
         const total = this.game.roundSentences.length;
-        const current = Math.min(this.game.sentenceIndex + 1, total);
         const percent = total ? Math.round((this.game.sentenceIndex / total) * 100) : 0;
 
         if (this.elements.progressFill) {
@@ -538,33 +750,6 @@ class WordOrderUI {
         window.setTimeout(() => {
             banner.textContent = '';
         }, 1800);
-    }
-
-    onTouchStart(event) {
-        const touch = event.changedTouches[0];
-        this.touchStartX = touch.clientX;
-        this.touchStartY = touch.clientY;
-    }
-
-    onTouchEnd(event) {
-        if (!this.game.awaitingAdvance || this.game.difficulty?.autoAdvance) {
-            return;
-        }
-
-        const touch = event.changedTouches[0];
-        const deltaX = touch.clientX - this.touchStartX;
-        const deltaY = touch.clientY - this.touchStartY;
-
-        if (Math.abs(deltaX) < 60 || Math.abs(deltaY) > 80) {
-            return;
-        }
-
-        if (deltaX > 0) {
-            this.goToNextSentence();
-        } else {
-            this.game.markReviewLater();
-            this.flashMessage('Added to review queue.');
-        }
     }
 }
 

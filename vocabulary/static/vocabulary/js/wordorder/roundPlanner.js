@@ -17,7 +17,7 @@ const WordOrderRoundPlanner = {
             return [];
         }
 
-        const rounds = [];
+        const rounds = [];0
         let index = 0;
 
         while (index < sentences.length) {

@@ -55,28 +55,45 @@
                 <span id="woMastery">0%</span>
             </div>
             <div class="wo-hint-wrap">
-    <button id="woHintToggle" class="topbar-button icon-button" type="button"
-        aria-label="Hints" aria-expanded="false">
-        <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
-    </button>
-    <div id="woHintDropdown" class="wo-hint-menu" hidden>
-        <button type="button" class="wo-hint-item" data-hint="nextWord">
-            <span class="wo-hint-icon">💡</span>
-            <span class="wo-hint-label">Next Word</span>
-            <span class="wo-hint-cost">−10 pts</span>
-        </button>
-        <button type="button" class="wo-hint-item" data-hint="translation">
-            <span class="wo-hint-icon">🌐</span>
-            <span class="wo-hint-label">Translation</span>
-            <span class="wo-hint-cost">−30 pts</span>
-        </button>
-        <button type="button" class="wo-hint-item" data-hint="revealAnswer">
-            <span class="wo-hint-icon">👁</span>
-            <span class="wo-hint-label">Reveal Answer</span>
-            <span class="wo-hint-cost">−50 pts</span>
-        </button>
-    </div>
-</div>
+                <button id="woHintToggle" class="topbar-button icon-button wo-hint-trigger" type="button"
+                    aria-label="Hints" aria-expanded="false" aria-haspopup="true">
+                    <i class="fa-solid fa-lightbulb" aria-hidden="true"></i>
+                </button>
+                <div id="woHintDropdown" class="wo-hint-dropdown" hidden role="menu">
+                    <p class="wo-hint-dropdown__header">Use a hint</p>
+                    <button type="button" class="wo-hint-row" data-hint="nextWord" role="menuitem">
+                        <span class="wo-hint-badge wo-hint-badge--next">
+                            <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
+                        </span>
+                        <span class="wo-hint-row__body">
+                            <span class="wo-hint-row__label">Next Word</span>
+                            <span class="wo-hint-row__desc">Highlights the correct word</span>
+                        </span>
+                        <span class="wo-hint-row__cost">−10</span>
+                    </button>
+                    <button type="button" class="wo-hint-row" data-hint="translation" role="menuitem">
+                        <span class="wo-hint-badge wo-hint-badge--trans">
+                            <i class="fa-solid fa-language" aria-hidden="true"></i>
+                        </span>
+                        <span class="wo-hint-row__body">
+                            <span class="wo-hint-row__label">Translation</span>
+                            <span class="wo-hint-row__desc">Show Uzbek translation</span>
+                        </span>
+                        <span class="wo-hint-row__cost">−30</span>
+                    </button>
+                    <hr class="wo-hint-dropdown__divider">
+                    <button type="button" class="wo-hint-row wo-hint-row--danger" data-hint="revealAnswer" role="menuitem">
+                        <span class="wo-hint-badge wo-hint-badge--reveal">
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        </span>
+                        <span class="wo-hint-row__body">
+                            <span class="wo-hint-row__label">Reveal Answer</span>
+                            <span class="wo-hint-row__desc">Shows the full sentence</span>
+                        </span>
+                        <span class="wo-hint-row__cost">−50</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -135,49 +152,31 @@
     </section>
 
     <section id="woGameScreen" class="wo-game" hidden>
-        <div id="woCardStage" class="flashcard-scene wo-card-scene">
-            <div id="woSentenceCard" class="flashcard wo-card">
-                <div id="woCardInner">
-                    <div id="woCardFront" class="flashcard__face flashcard__face--front wo-card-face--front">                    <p class="wo-card-label">Build the sentence</p>
-                        <div id="woSentenceArea" class="wo-sentence-area" aria-live="polite"></div>
-                        <p id="woTranslationHint" class="wo-translation-hint" hidden></p>
-                        <div id="woSwipeHint" class="wo-swipe-hint" hidden>
-                            <span>Swipe right for next · Swipe left to review</span>
-                        </div>
-                    </div>
-                    <div id="woCardBack" class="flashcard__face flashcard__face--back wo-card-face--back">
-                        <p class="flashcard__hint-label">Sentence complete</p>
-                        <p id="woCompletedEnglish" class="flashcard__word flashcard__word--english"></p>
-                        <p id="woCompletedUzbek" class="wo-completed-uzbek"></p>
-                        <button id="woSpeakEnglish" type="button" class="vocab-card__speak" aria-label="Listen to sentence">
-                            <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
-                            <span>Listen</span>
-                        </button>
-                        <button id="woNextSentence" type="button" class="primary-button wo-next-btn">
-                            Next <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-                        </button>
-                    </div>
+        <div id="woCardStage" class="flashcard-scene">
+            <div class="swipe-hint swipe-hint--left" id="woSwipeHintLeft" aria-hidden="true"><span>Next</span></div>
+            <div class="swipe-hint swipe-hint--right" id="woSwipeHintRight" aria-hidden="true"><span>Review</span></div>
+            <div id="woSentenceCard" class="flashcard" tabindex="0" aria-live="polite">
+                <div class="flashcard__face flashcard__face--front wo-card-front">
+                    <p class="flashcard__hint-label">Build the sentence</p>
+                    <div id="woSentenceArea" class="wo-sentence-area" aria-live="polite"></div>
+                    <p id="woTranslationHint" class="wo-translation-hint" hidden></p>
+                </div>
+                <div class="flashcard__face flashcard__face--back">
+                    <p class="flashcard__hint-label">English</p>
+                    <p id="woCompletedEnglish" class="flashcard__word flashcard__word--english"></p>
+                    <p id="woCompletedUzbek" class="wo-completed-uzbek"></p>
+                    <button id="woSpeakEnglish" type="button" class="vocab-card__speak" aria-label="Listen to sentence">
+                        <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+                        <span>Listen</span>
+                    </button>
+                    <button id="woNextSentence" type="button" class="primary-button wo-next-btn">
+                        Next <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
         </div>
 
         <div id="woWordBank" class="wo-word-bank" aria-label="Word bank"></div>
-
-        <!-- <div id="woHintPanel" class="wo-hint-panel">
-            <p class="wo-hint-label">Hints <span class="wo-hint-note">(cost points · marks for review)</span></p>
-            <div class="wo-hint-actions">
-                <button type="button" class="wo-hint-btn" data-hint="nextWord">Next word · 10</button>
-                <button type="button" class="wo-hint-btn" data-hint="translation">Translation · 30</button>
-                <button type="button" class="wo-hint-btn" data-hint="revealAnswer">Reveal answer · 50</button>
-            </div>
-        </div> -->
-
-        <div id="woCompletionActions" class="wo-completion-actions" hidden>
-            <!-- <button id="woSpeakEnglish" type="button" class="wo-action-btn">🔊 English</button>
-            <button id="woSpeakUzbek" type="button" class="wo-action-btn">🔊 Uzbek</button> -->
-            <button id="woReviewLater" type="button" class="wo-action-btn">📌 Review Later</button>
-            <!-- <button id="woNextSentence" type="button" class="wo-action-btn wo-action-btn--primary">➡ Next</button> -->
-        </div>
     </section>
 
     <div id="woRoundCompleteModal" class="game-modal wo-modal" hidden role="dialog" aria-modal="true" aria-labelledby="woRoundCompleteTitle">

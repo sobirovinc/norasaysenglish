@@ -181,28 +181,41 @@ class WordOrderGame {
     handleCorrectWord(bankItem, expectedToken) {
         bankItem.used = true;
         expectedToken.placed = true;
-        this.currentSentence.progressIndex += 1;
-        this.correctWords += 1;
 
+        // Advance progressIndex, skipping any already-revealed tokens
+        this.currentSentence.progressIndex += 1;
+        while (
+            this.currentSentence.progressIndex < this.currentSentence.tokens.length &&
+            this.currentSentence.tokens[this.currentSentence.progressIndex].placed
+        ) {
+            this.currentSentence.progressIndex += 1;
+        }
+
+        this.correctWords += 1;
         const points = Math.round(WordOrderConfig.POINTS_PER_WORD * this.difficulty.multiplier);
         this.score += points;
 
         const remaining = WordOrderSentenceParser.remainingBankCount(this.currentSentence);
-        const result = {
-            type: 'correct',
-            bankItem,
-            token: expectedToken,
-            points,
-            remaining,
-        };
+        const result = { type: 'correct', bankItem, token: expectedToken, points, remaining };
 
         this.emit('wordCorrect', result);
 
+        if (!this.currentSentence || (this.awaitingAdvance && !this.currentSentence.pendingAutoPlace)) {
+            return null;
+        }
+
         if (remaining === 1) {
-            window.requestAnimationFrame(() => this.autoPlaceFinalWord());
+            const lastItem = this.currentSentence.bank.find(item => !item.used);
+            const lastToken = WordOrderSentenceParser.getNextExpectedToken(this.currentSentence);
+            this.emit('autoPlaceReady', { bankItem: lastItem, token: lastToken });
         } else if (remaining === 0) {
             this.completeSentence();
         }
+
+        // if (remaining === 1) {
+        //     this.currentSentence.pendingAutoPlace = true;
+        //     window.setTimeout(() => this.autoPlaceFinalWord(), 420);
+        // }
 
         return result;
     }
@@ -252,6 +265,12 @@ class WordOrderGame {
         bankItem.used = true;
         expected.placed = true;
         this.currentSentence.progressIndex += 1;
+        while (
+            this.currentSentence.progressIndex < this.currentSentence.tokens.length &&
+            this.currentSentence.tokens[this.currentSentence.progressIndex].placed
+        ) {
+            this.currentSentence.progressIndex += 1;
+        }
         this.correctWords += 1;
 
         const points = Math.round(WordOrderConfig.POINTS_PER_WORD * this.difficulty.multiplier);
@@ -265,6 +284,7 @@ class WordOrderGame {
         };
 
         this.emit('wordAutoPlaced', result);
+        this.currentSentence.pendingAutoPlace = false;
         this.completeSentence();
         return result;
     }
